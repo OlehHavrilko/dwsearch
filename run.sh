@@ -58,7 +58,7 @@ case "$cmd" in
   web)
     ensure_tor
     echo "[+] Dwsearch web: http://127.0.0.1:50001"
-    exec "$HERE/.venv/bin/python" "$HERE/dwsearch-web/app.py" "$@"
+    exec "$HERE/.venv/bin/python" -m dwsearch_web "$@"
     ;;
   tor-log)
     tail -f /tmp/tor-dwsearch.log

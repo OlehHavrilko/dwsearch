@@ -10,5 +10,11 @@ requires-python = ">=3.9"
 dependencies = []
 
 [project.scripts]
-dwsearch = "dwsearch.core:dwsearch_main"
+dwsearch = "dwsearch_web:main"
 
+[tool.setuptools]
+packages = ["dwsearch", "dwsearch_web", "banner", "headers"]
+include-package-data = true
+
+[tool.setuptools.package-data]
+dwsearch_web = ["templates/*.html"]

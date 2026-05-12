@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Dwsearch</title>
+<style>
+@import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=IBM+Plex+Sans:wght@400;500&display=swap');
+
+:root {
+  --bg:       #111214;
+  --surface:  #18191c;
+  --surface2: #1e2023;
+  --border:   #2a2c30;
+  --border2:  #333639;
+  --text:     #d4d6da;
+  --muted:    #6b6f78;
+  --dim:      #3c4049;
+  --accent:   #b70aa5;
+  --accent2:  #2d7dd2;
+  --green:    #3fb950;
+  --amber:    #d29922;
+  --red:      #f85149;
+  --critical: #ff4444;
+  --high:     #d29922;
+  --medium:   #4a9eff;
+  --info:     #6b6f78;
+  --mono:     'IBM Plex Mono', monospace;
+  --sans:     'IBM Plex Sans', sans-serif;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body { height: 100%; background: var(--bg); color: var(--text);
+  font-family: var(--sans); font-size: 13px; line-height: 1.5; }
+
+#app { display: flex; flex-direction: column; height: 100vh;
+  max-width: 1100px; margin: 0 auto; padding: 0 20px; }
+
+/* ── Header ── */
+header { display: flex; align-items: center; gap: 14px;
+  padding: 14px 0 12px; border-bottom: 1px solid var(--border); flex-shrink: 0; }
+.logo { font-family: var(--mono); font-size: 20px; font-weight: 520; color: var(--text); }
+.logo-dot { color: var(--accent); }
+.header-meta { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+#tor-badge { display: none; align-items: center; gap: 6px; margin-left: auto;
+  padding: 3px 10px; border: 1px solid var(--border2); border-radius: 3px;
+  font-family: var(--mono); font-size: 11px; color: var(--muted); }
+#tor-badge.active { border-color: var(--green); color: var(--green); }
+#tor-badge.active .dot { background: var(--green); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
+#clock { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+
+/* ── Mode tabs ── */
+#mode-tabs { display: flex; gap: 2px; padding: 10px 0 0; flex-shrink: 0; }
+.tab { font-family: var(--mono); font-size: 11px; padding: 5px 14px; cursor: pointer;
+  border: 1px solid var(--border); border-bottom: none; border-radius: 3px 3px 0 0;
+  color: var(--muted); background: var(--bg); user-select: none; transition: color 0.1s, background 0.1s; }
+.tab:hover { color: var(--text); }
+.tab.active { color: var(--text); background: var(--surface); border-color: var(--border2); }
+.tab.breach-tab.active { color: var(--amber); border-color: var(--amber); }
+
+/* ── Controls ── */
+#controls { padding: 12px 0 12px; border: 1px solid var(--border2);
+  border-top: none; background: var(--surface); padding: 14px; flex-shrink: 0; }
+.search-row { display: flex; gap: 8px; margin-bottom: 10px; }
+#query { flex: 1; background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text); font-family: var(--mono); font-size: 13px;
+  padding: 7px 10px; outline: none; transition: border-color 0.1s; }
+#query:focus { border-color: var(--accent2); }
+#query::placeholder { color: var(--dim); }
+.options-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; margin-bottom: 10px; }
+.opt { display: flex; flex-direction: column; gap: 4px; }
+.opt label { font-size: 10px; color: var(--muted); letter-spacing: 0.5px; text-transform: uppercase; }
+select, input[type=number] { background: var(--surface2); border: 1px solid var(--border);
+  border-radius: 3px; color: var(--text); font-family: var(--mono); font-size: 12px;
+  padding: 5px 8px; outline: none; cursor: pointer; appearance: none; min-width: 130px; }
+select:focus, input[type=number]:focus { border-color: var(--accent2); }
+input[type=number] { width: 70px; min-width: unset; }
+.flags { display: flex; gap: 14px; align-items: center; flex-wrap: wrap; padding-top: 2px; }
+.flag { display: flex; align-items: center; gap: 6px; cursor: pointer;
+  user-select: none; font-size: 12px; color: var(--muted); }
+.flag:hover { color: var(--text); }
+.flag input[type=checkbox] { appearance: none; width: 13px; height: 13px;
+  border: 1px solid var(--border2); border-radius: 2px; background: var(--surface);
+  cursor: pointer; position: relative; flex-shrink: 0; transition: background 0.1s, border-color 0.1s; }
+.flag input[type=checkbox]:checked { background: var(--accent2); border-color: var(--accent); }
+.flag input[type=checkbox]:checked::after { content: ''; position: absolute;
+  top: 2px; left: 4px; width: 4px; height: 7px;
+  border: 1.5px solid #fff; border-top: none; border-left: none; transform: rotate(45deg); }
+#warning-bar { display: none; margin-top: 8px; padding: 7px 10px;
+  border: 1px solid var(--amber); border-radius: 3px; background: rgba(210,153,34,0.07);
+  color: var(--amber); font-size: 11px; }
+
+/* breach info bar */
+#breach-info { display: none; margin-top: 8px; padding: 7px 10px;
+  border: 1px solid var(--border); border-radius: 3px; background: var(--surface2);
+  color: var(--muted); font-size: 11px; font-family: var(--mono); }
+
+/* ── Buttons ── */
+button { background: var(--surface2); border: 1px solid var(--border2); border-radius: 3px;
+  color: var(--text); font-family: var(--mono); font-size: 12px; padding: 7px 16px;
+  cursor: pointer; transition: background 0.1s, border-color 0.1s; white-space: nowrap; }
+button:hover { background: var(--dim); border-color: var(--muted); }
+button.primary { background: var(--accent2); border-color: var(--accent); color: #fff; }
+button.primary:hover { background: var(--accent); }
+button.primary:disabled { opacity: 0.45; cursor: default; }
+button.primary.breach-btn { background: #7c4d10; border-color: var(--amber); }
+button.primary.breach-btn:hover { background: #9a5f14; }
+button.abort { display: none; color: var(--red); border-color: var(--red); background: transparent; }
+button.abort:hover { background: rgba(248,81,73,0.1); }
+#status { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-left: 4px; }
+
+/* ── Output pane ── */
+#output-pane { flex: 1; display: flex; flex-direction: column; min-height: 0; padding: 12px 0 16px; }
+#output-header { display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: 8px; flex-shrink: 0; gap: 10px; }
+.pane-label { font-family: var(--mono); font-size: 10px; color: var(--muted);
+  text-transform: uppercase; letter-spacing: 0.8px; }
+#result-count { font-family: var(--mono); font-size: 11px; color: var(--muted); margin-right: auto; }
+.export-row { display: flex; align-items: center; gap: 6px; }
+.export-row select { min-width: unset; width: 70px; padding: 4px 6px; font-size: 11px; }
+.export-row button { padding: 4px 12px; font-size: 11px; }
+#output-box { flex: 1; min-height: 0; overflow-y: auto; background: var(--surface);
+  border: 1px solid var(--border); border-radius: 3px; padding: 12px 14px;
+  font-family: var(--mono); font-size: 12px; }
+
+/* ── Log lines ── */
+.log-line { color: var(--muted); line-height: 1.7; }
+.log-line.ok   { color: var(--green); }
+.log-line.warn { color: var(--amber); }
+.log-line.err  { color: var(--red); }
+
+/* ── Query progress (breach mode) ── */
+.breach-query-line { color: var(--accent); line-height: 1.7; font-size: 11px; }
+
+/* ── Result cards ── */
+.result-card { margin-top: 12px; padding: 12px; border: 1px solid var(--border);
+  border-radius: 3px; background: var(--surface2); }
+.result-card.breach { border-left: 2px solid var(--amber); }
+.rc-header { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; }
+.rc-num { font-size: 10px; color: var(--muted); flex-shrink: 0; }
+.rc-badges { display: flex; gap: 5px; flex-wrap: wrap; }
+.badge { font-size: 10px; padding: 1px 6px; border-radius: 2px;
+  border: 1px solid currentColor; line-height: 1.4; }
+.badge.filtered   { color: var(--green); }
+.badge.unfiltered { color: var(--amber); }
+.badge.tor        { color: var(--accent); }
+.badge.breach-q   { color: var(--muted); font-size: 9px; max-width: 260px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.badge.sev-CRITICAL { color: var(--critical); border-color: var(--critical); font-weight: 500; }
+.badge.sev-HIGH     { color: var(--high);     border-color: var(--high); }
+.badge.sev-MEDIUM   { color: var(--medium);   border-color: var(--medium); }
+.badge.sev-INFO     { color: var(--info);     border-color: var(--info); }
+.artefacts-block { margin-top: 8px; padding: 8px 10px; border: 1px solid var(--border);
+  border-radius: 2px; background: var(--bg); font-size: 11px; display: grid;
+  grid-template-columns: 100px 1fr; gap: 3px 8px; }
+.art-key { color: var(--muted); }
+.art-val { color: var(--text); opacity: 0.8; word-break: break-all; font-family: var(--mono); }
+.cat-tag { font-size: 10px; padding: 1px 6px; border-radius: 2px; background: var(--surface);
+  color: var(--muted); border: 1px solid var(--border); font-family: var(--mono); }
+.rc-title { color: var(--text); font-size: 13px; font-weight: 500;
+  font-family: var(--sans); margin-bottom: 3px; word-break: break-all; }
+.rc-url { color: var(--muted); font-size: 11px; margin-bottom: 6px; word-break: break-all; }
+.rc-desc { color: var(--text); font-family: var(--sans); font-size: 12px;
+  opacity: 0.75; line-height: 1.55; }
+.rc-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-mini { font-size: 11px; padding: 6px 9px; border-radius: 2px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); cursor: pointer; }
+.btn-mini:hover { border-color: var(--border2); }
+.btn-mini.primary { border-color: rgba(88,166,255,0.35); color: var(--accent); }
+.btn-mini.danger { border-color: rgba(255,123,114,0.25); color: var(--critical); }
+.scrape-data { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
+  display: grid; grid-template-columns: 90px 1fr; gap: 3px 8px; font-size: 11px; }
+.sd-key { color: var(--muted); }
+.sd-val { color: var(--text); opacity: 0.8; word-break: break-all; }
+.sd-gallery { grid-column: 1 / -1; margin-top: 8px; padding-top: 8px;
+  border-top: 1px solid var(--border); font-size: 11px; color: var(--muted); }
+.sd-gallery a { color: var(--accent); text-decoration: none; word-break: break-all; }
+.sd-gallery a:hover { text-decoration: underline; }
+
+::-webkit-scrollbar { width: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+</style>
+</head>
+<body>
+<div id="app">
+
+  <header>
+    <div class="logo">dwsearch<span class="logo-dot"> / </span></div>
+    <span class="header-meta">v4 &mdash; Deep Web Intelligence Interface by Josh Schiavone</span>
+    <div id="tor-badge"><span class="dot"></span><span id="tor-ip-text">Tor</span></div>
+    <span id="clock"></span>
+  </header>
+
+  <!-- mode tabs -->
+  <div id="mode-tabs">
+    <div class="tab active" id="tab-search" onclick="setMode('search')">Search</div>
+    <div class="tab breach-tab" id="tab-breach" onclick="setMode('breach')">Breach Intel</div>
+  </div>
+
+  <div id="controls">
+    <div class="search-row">
+      <input id="query" type="text" placeholder="Search query…" spellcheck="false" autofocus>
+      <button class="primary" id="btn-run" type="button">Search</button>
+      <button class="abort" id="btn-abort" type="button">Abort</button>
+      <span id="status"></span>
+    </div>
+
+    <div class="options-row">
+      <div class="opt">
+        <label>Engine</label>
+        <select id="engine">
+          {% for key, eng in engines.items() %}
+          <option value="{{ key }}">{{ eng.name }}{% if not eng.filtered %} (unfiltered){% endif %}{% if eng.tor_required %} [Tor]{% endif %}</option>
+          {% endfor %}
+        </select>
+      </div>
+      <div class="opt">
+        <label id="amount-label">Results</label>
+        <input id="amount" type="number" value="10" min="1" max="50">
+      </div>
+      <!-- search-only flags -->
+      <div class="flags" id="search-flags">
+        <label class="flag"><input type="checkbox" id="flag-proxy"><span>Tor proxy</span></label>
+        <label class="flag"><input type="checkbox" id="flag-dedupe"><span>Deduplicate</span></label>
+        <label class="flag"><input type="checkbox" id="flag-scrape"><span>Deep scrape (Use w/ Caution)</span></label>
+        <label class="flag" id="images-flag" style="display:none">
+          <input type="checkbox" id="flag-images"><span>Scrape images</span>
+        </label>
+      </div>
+      <!-- breach-only flags -->
+      <div class="flags" id="breach-flags" style="display:none">
+        <label class="flag"><input type="checkbox" id="flag-breach-proxy"><span>Tor proxy</span></label>
+      </div>
+    </div>
+
+    <div id="warning-bar"></div>
+    <div id="breach-info">
+      Breach Intel runs a battery of targeted queries (leak, dump, credentials, combolist, etc.)
+      for the given email, domain, or keyword across the selected engine and deduplicates results.
+    </div>
+  </div>
+
+  <div id="output-pane">
+    <div id="output-header">
+      <span class="pane-label">Output</span>
+      <span id="result-count"></span>
+      <div class="export-row">
+        <select id="export-fmt">
+          <option value="json">JSON</option>
+          <option value="csv">CSV</option>
+          <option value="txt">TXT</option>
+        </select>
+        <button id="btn-export" type="button">Export</button>
+      </div>
+    </div>
+    <div id="output-box">
+      <div class="log-line">Ready.</div>
+    </div>
+  </div>
+
+</div>
+<script>
+// ── Clock ──
+(function tick() {
+  document.getElementById('clock').textContent = new Date().toTimeString().slice(0,8);
+  setTimeout(tick, 1000);
+})();
+
+const engines = {{ engines | tojson }};
+
+// ── URL Defaults ──
+// Supports: ?engine=tordex&proxy=1&dedupe=1&scrape=0&images=0&amount=10&mode=search
+function applyUrlDefaults() {
+  const p = new URLSearchParams(window.location.search);
+  const mode = (p.get('mode') || '').toLowerCase();
+  if (mode === 'breach') setMode('breach');
+
+  const engine = (p.get('engine') || '').toLowerCase();
+  if (engine && engines[engine]) document.getElementById('engine').value = engine;
+
+  const amount = parseInt(p.get('amount') || '', 10);
+  if (!Number.isNaN(amount)) document.getElementById('amount').value = String(Math.max(1, Math.min(50, amount)));
+
+  const asBool = (v) => v === '1' || v === 'true' || v === 'yes' || v === 'on';
+  const proxy = p.get('proxy');   if (proxy != null) document.getElementById('flag-proxy').checked = asBool(proxy);
+  const dedupe = p.get('dedupe'); if (dedupe != null) document.getElementById('flag-dedupe').checked = asBool(dedupe);
+  const scrape = p.get('scrape'); if (scrape != null) document.getElementById('flag-scrape').checked = asBool(scrape);
+  const images = p.get('images'); if (images != null) document.getElementById('flag-images').checked = asBool(images);
+
+  // Breach proxy flag
+  const bproxy = p.get('bproxy');
+  if (bproxy != null) document.getElementById('flag-breach-proxy').checked = asBool(bproxy);
+}
+
+// ── Mode ──
+let currentMode = 'search';
+
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('tab-search').classList.toggle('active', mode === 'search');
+  document.getElementById('tab-breach').classList.toggle('active', mode === 'breach');
+  document.getElementById('search-flags').style.display  = mode === 'search' ? 'flex' : 'none';
+  document.getElementById('breach-flags').style.display  = mode === 'breach' ? 'flex' : 'none';
+  document.getElementById('breach-info').style.display   = mode === 'breach' ? 'block' : 'none';
+  const btn = document.getElementById('btn-run');
+  btn.textContent = mode === 'search' ? 'Search' : 'Run Breach Scan';
+  btn.className   = mode === 'search' ? 'primary' : 'primary breach-btn';
+  document.getElementById('query').placeholder =
+    mode === 'search' ? 'Search query…' : 'Email, domain, or username…';
+  if (mode === 'breach') {
+    document.getElementById('amount-label').textContent = 'Results / query';
+  } else {
+    document.getElementById('amount-label').textContent = 'Results';
+  }
+  updateEngineUI();
+}
+
+// ── Engine UI ──
+function updateEngineUI() {
+  const key  = document.getElementById('engine').value;
+  const eng  = engines[key] || {};
+  const warn = document.getElementById('warning-bar');
+  const proxyId = currentMode === 'search' ? 'flag-proxy' : 'flag-breach-proxy';
+  const proxyBox = document.getElementById(proxyId);
+
+  warn.style.display = !eng.filtered ? 'block' : 'none';
+  if (!eng.filtered)
+    warn.textContent = `Warning: ${eng.name} is unfiltered. Results may include illegal or harmful content. Use for legitimate research only.`;
+
+  if (proxyBox) {
+    proxyBox.disabled = !!eng.tor_required;
+    if (eng.tor_required) proxyBox.checked = true;
+  }
+
+  const imagesFlag = document.getElementById('images-flag');
+  const scrapeBox  = document.getElementById('flag-scrape');
+  if (imagesFlag && scrapeBox)
+    imagesFlag.style.display = scrapeBox.checked ? 'flex' : 'none';
+}
+
+document.getElementById('engine').addEventListener('change', updateEngineUI);
+document.getElementById('flag-scrape').addEventListener('change', updateEngineUI);
+updateEngineUI();
+applyUrlDefaults();
+updateEngineUI();
+
+// ── Tor badge ──
+const torBadge  = document.getElementById('tor-badge');
+const torIpText = document.getElementById('tor-ip-text');
+
+function checkTorStatus() {
+  torBadge.style.display = 'flex';
+  torBadge.classList.remove('active');
+  torIpText.textContent = 'Checking Tor…';
+  fetch('/tor-status').then(r => r.json()).then(d => {
+    torBadge.classList.toggle('active', d.tor);
+    torIpText.textContent = d.tor ? `Tor · ${d.ip}` : `Not connected · ${d.ip}`;
+  }).catch(() => { torIpText.textContent = 'Tor check failed'; });
+}
+
+document.getElementById('flag-proxy').addEventListener('change', function() {
+  if (this.checked) checkTorStatus();
+  else { torBadge.style.display = 'none'; torBadge.classList.remove('active'); }
+});
+
+document.getElementById('flag-breach-proxy').addEventListener('change', function() {
+  if (this.checked) checkTorStatus();
+  else { torBadge.style.display = 'none'; torBadge.classList.remove('active'); }
+});
+
+// If URL defaults enabled proxy, show Tor status immediately.
+if (document.getElementById('flag-proxy').checked || document.getElementById('flag-breach-proxy').checked) {
+  checkTorStatus();
+}
+
+// ── State ──
+let evtSource   = null;
+let resultCount = 0;
+let allResults  = [];
+let lastQuery   = '';
+let lastEngine  = '';
+
+const outputBox = document.getElementById('output-box');
+const statusEl  = document.getElementById('status');
+const countEl   = document.getElementById('result-count');
+const btnRun    = document.getElementById('btn-run');
+const btnAbort  = document.getElementById('btn-abort');
+
+function appendLog(msg, cls) {
+  const el = document.createElement('div');
+  el.className = 'log-line' + (cls ? ' ' + cls : '');
+  el.textContent = msg;
+  outputBox.appendChild(el);
+  outputBox.scrollTop = outputBox.scrollHeight;
+}
+
+function appendRaw(el) {
+  outputBox.appendChild(el);
+  outputBox.scrollTop = outputBox.scrollHeight;
+}
+
+function clearOutput() {
+  outputBox.innerHTML = '';
+  resultCount = 0; allResults = [];
+  countEl.textContent = ''; statusEl.textContent = '';
+}
+
+function setRunning(on) {
+  btnRun.disabled = on;
+  btnAbort.style.display = on ? 'inline-block' : 'none';
+}
+
+function esc(s) {
+  return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function renderResult(d, isBreach) {
+  const eng = engines[document.getElementById('engine').value] || {};
+  let badges = eng.filtered
+    ? '<span class="badge filtered">filtered</span>'
+    : '<span class="badge unfiltered">unfiltered</span>';
+  if (eng.tor_required) badges += '<span class="badge tor">tor</span>';
+
+  if (isBreach) {
+    const sev = d.severity || 'INFO';
+    badges += `<span class="badge sev-${esc(sev)}">${esc(sev)}</span>`;
+    if (d.category)
+      badges += `<span class="cat-tag">${esc(d.category)}</span>`;
+    if (d.breach_query)
+      badges += `<span class="badge breach-q" title="${esc(d.breach_query)}">${esc(d.breach_query)}</span>`;
+  }
+
+  // Artefacts block
+  let artefactsHtml = '';
+  if (isBreach && d.artefacts && Object.keys(d.artefacts).length) {
+    const rows = Object.entries(d.artefacts).map(([k, v]) => {
+      const val = Array.isArray(v)
+        ? v.map(x => typeof x === 'object' ? `${x.type}:${x.value}` : x).join(', ')
+        : String(v);
+      return `<span class="art-key">${esc(k)}</span><span class="art-val">${esc(val)}</span>`;
+    }).join('');
+    artefactsHtml = `<div class="artefacts-block">${rows}</div>`;
+  }
+
+  let scrapeHtml = '';
+  if (d.scrape_data) {
+    const sd = d.scrape_data;
+    const emails = sd.emails && sd.emails.length ? esc(sd.emails.join(', ')) : '—';
+    const docs   = sd.documents && sd.documents.length ? esc(sd.documents.join(', ')) : '—';
+    let galleryHtml = sd.images_gallery
+      ? `<div class="sd-gallery">Images saved → <a href="file://${esc(sd.images_gallery)}" target="_blank">${esc(sd.images_gallery)}</a></div>`
+      : '';
+    scrapeHtml = `<div class="scrape-data">
+      <span class="sd-key">Metadata</span><span class="sd-val">${esc(JSON.stringify(sd.metadata))}</span>
+      <span class="sd-key">Links</span><span class="sd-val">${sd.links_count}</span>
+      <span class="sd-key">Emails</span><span class="sd-val">${emails}</span>
+      <span class="sd-key">Documents</span><span class="sd-val">${docs}</span>
+      ${galleryHtml}</div>`;
+  }
+
+  const card = document.createElement('div');
+  card.className = 'result-card' + (isBreach ? ' breach' : '');
+  card.innerHTML = `
+    <div class="rc-header"><span class="rc-num">#${d.idx}</span><div class="rc-badges">${badges}</div></div>
+    <div class="rc-title">${esc(d.title)}</div>
+    <div class="rc-url">${esc(d.url)}</div>
+    <div class="rc-desc">${esc(d.description)}</div>
+    <div class="rc-actions">
+      <a class="btn-mini primary" href="${esc(d.url)}" target="_blank" rel="noreferrer">Open</a>
+      <button class="btn-mini" type="button" data-open-tor="${esc(d.url)}">Open in Tor Browser</button>
+      <button class="btn-mini danger" type="button" data-copy-url="${esc(d.url)}">Copy URL</button>
+    </div>
+    ${artefactsHtml}
+    ${scrapeHtml}`;
+  outputBox.appendChild(card);
+  outputBox.scrollTop = outputBox.scrollHeight;
+}
+
+async function openInTorBrowser(url) {
+  try {
+    const r = await fetch('/open', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url})
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'failed');
+    appendLog(`Open in Tor Browser: ${d.cmd}`, 'ok');
+  } catch (e) {
+    appendLog(`Open in Tor Browser failed: ${e.message}`, 'err');
+  }
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    appendLog('Copied URL to clipboard.', 'ok');
+  } catch {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    appendLog('Copied URL to clipboard.', 'ok');
+  }
+}
+
+outputBox.addEventListener('click', (ev) => {
+  const t = ev.target;
+  if (!(t instanceof HTMLElement)) return;
+  const torUrl = t.getAttribute('data-open-tor');
+  if (torUrl) { openInTorBrowser(torUrl); return; }
+  const copyUrl = t.getAttribute('data-copy-url');
+  if (copyUrl) { copyToClipboard(copyUrl); return; }
+});
+
+// ── Common SSE wiring ──
+function wireSSE(url, isBreach) {
+  if (evtSource) { evtSource.close(); evtSource = null; }
+  clearOutput();
+  setRunning(true);
+  evtSource = new EventSource(url);
+
+  evtSource.addEventListener('tor_ok', ev => {
+    const d = JSON.parse(ev.data);
+    torBadge.style.display = 'flex'; torBadge.classList.add('active');
+    torIpText.textContent = `Tor · ${d.ip}`;
+    appendLog(`Tor verified — exit IP: ${d.ip}`, 'ok');
+  });
+
+  evtSource.addEventListener('count', ev => {
+    appendLog(`Engine returned ${JSON.parse(ev.data).total} candidate(s).`);
+  });
+
+  // breach-specific events
+  evtSource.addEventListener('breach_start', ev => {
+    const d = JSON.parse(ev.data);
+    appendLog(`Target: ${d.target}  ·  Type: ${d.type}  ·  Queries: ${d.queries}  ·  Engine: ${d.engine}`, 'ok');
+  });
+
+  evtSource.addEventListener('breach_query', ev => {
+    const d = JSON.parse(ev.data);
+    const el = document.createElement('div');
+    el.className = 'breach-query-line';
+    el.textContent = `[${d.idx}/${d.total}] ${d.query}`;
+    appendRaw(el);
+    statusEl.textContent = `Query ${d.idx}/${d.total}…`;
+  });
+
+  evtSource.addEventListener('result', ev => {
+    const d = JSON.parse(ev.data);
+    resultCount++;
+    allResults.push(d);
+    countEl.textContent = `${resultCount} result${resultCount !== 1 ? 's' : ''}`;
+    if (!isBreach) statusEl.textContent = `Processing ${d.idx}…`;
+    renderResult(d, isBreach);
+  });
+
+  evtSource.addEventListener('error', ev => {
+    try { appendLog('Error: ' + JSON.parse(ev.data).message, 'err'); }
+    catch { appendLog('Stream error.', 'err'); }
+  });
+
+  evtSource.addEventListener('done', () => {
+    evtSource.close(); evtSource = null;
+    setRunning(false); statusEl.textContent = '';
+    appendLog(
+      resultCount > 0 ? `Done — ${resultCount} result(s).` : 'Done — no results.',
+      resultCount > 0 ? 'ok' : 'warn'
+    );
+  });
+
+  evtSource.onerror = () => {
+    if (evtSource && evtSource.readyState === EventSource.CLOSED) {
+      appendLog('Connection closed.', 'warn');
+      setRunning(false); evtSource = null;
+    }
+  };
+}
+
+// ── Run button ──
+btnRun.addEventListener('click', function() {
+  const q      = document.getElementById('query').value.trim();
+  const engine = document.getElementById('engine').value;
+  const amount = document.getElementById('amount').value;
+  const eng    = engines[engine] || {};
+
+  if (!q) { appendLog('Enter a query.', 'warn'); return; }
+
+  if (!eng.filtered) {
+    const ok = confirm(
+      `Warning: ${eng.name} is an unfiltered search engine.\n\nResults may include illegal or harmful content.\nProceed for legitimate research only?`
+    );
+    if (!ok) return;
+  }
+
+  if (currentMode === 'breach') {
+    const proxy = document.getElementById('flag-breach-proxy').checked ? '1' : '0';
+    lastQuery = q; lastEngine = engine;
+    appendLog(`Breach Intel scan starting…`);
+    statusEl.textContent = 'Scanning…';
+    wireSSE(
+      `/breach?q=${encodeURIComponent(q)}&engine=${engine}&amount=${amount}&proxy=${proxy}`,
+      true
+    );
+  } else {
+    const proxy  = document.getElementById('flag-proxy').checked  ? '1' : '0';
+    const dedupe = document.getElementById('flag-dedupe').checked ? '1' : '0';
+    const scrape = document.getElementById('flag-scrape').checked ? '1' : '0';
+    const images = document.getElementById('flag-images').checked ? '1' : '0';
+    lastQuery = q; lastEngine = engine;
+    appendLog(`Query: ${q}  ·  Engine: ${engine}  ·  Max: ${amount}  ·  Proxy: ${proxy==='1'?'on':'off'}  ·  Dedupe: ${dedupe==='1'?'on':'off'}  ·  Scrape: ${scrape==='1'?'on':'off'}${images==='1'?' · Images: on':''}`);
+    statusEl.textContent = 'Searching…';
+    wireSSE(
+      `/search?q=${encodeURIComponent(q)}&engine=${engine}&amount=${amount}&proxy=${proxy}&dedupe=${dedupe}&scrape=${scrape}&images=${images}`,
+      false
+    );
+  }
+});
+
+btnAbort.addEventListener('click', () => {
+  if (evtSource) { evtSource.close(); evtSource = null; }
+  appendLog('Aborted.', 'warn');
+  setRunning(false); statusEl.textContent = '';
+});
+
+document.getElementById('query').addEventListener('keydown', e => {
+  if (e.key === 'Enter') btnRun.click();
+});
+
+// ── Export ──
+document.getElementById('btn-export').addEventListener('click', () => {
+  if (!allResults.length) { appendLog('Nothing to export yet.', 'warn'); return; }
+  const fmt = document.getElementById('export-fmt').value;
+  fetch('/export', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ format: fmt, results: allResults, query: lastQuery, engine: lastEngine })
+  })
+  .then(r => r.blob().then(blob => ({ blob, filename: r.headers.get('Content-Disposition').match(/filename="(.+)"/)[1] })))
+  .then(({ blob, filename }) => {
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+    URL.revokeObjectURL(a.href);
+  })
+  .catch(() => appendLog('Export failed.', 'err'));
+});
+</script>
+</body>
+</html>

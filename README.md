@@ -35,6 +35,7 @@ git clone https://github.com/OlehHavrilko/dwsearch.git
 cd dwsearch
 python3 -m venv .venv
 . .venv/bin/activate
+pip install -e .
 pip install -r requirements.txt
 pip install -r dwsearch-web/requirements.txt
 ```
@@ -42,7 +43,7 @@ pip install -r dwsearch-web/requirements.txt
 ### 2) Web launch with Tor
 
 ```bash
-./run.sh
+dwsearch
 ```
 
 Open `http://127.0.0.1:50001`
@@ -84,7 +85,7 @@ All engines are filtered against Ahmia's abuse blacklist, but *unfiltered engine
 Includes a local browser-based interface.
 
 ```bash
-./run.sh
+dwsearch
 ```
 
 Then open `http://127.0.0.1:50001`.
