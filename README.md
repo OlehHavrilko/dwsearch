@@ -1,84 +1,95 @@
-# darkdump
+# darkwebrc
+
+<p align="center">
+  <img alt="darkwebrc" src="imgs/darkdump_example.png" width="860">
+</p>
+
+<p align="center">
+  <a href="https://github.com/OlehHavrilko/darkwebrc/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/OlehHavrilko/darkwebrc/ci.yml?branch=main"></a>
+  <a href="https://github.com/OlehHavrilko/darkwebrc/releases"><img alt="Release" src="https://img.shields.io/github/v/release/OlehHavrilko/darkwebrc?display_name=tag&sort=semver"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/OlehHavrilko/darkwebrc"></a>
+  <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/python-3.9%2B-blue"></a>
+  <a href="https://github.com/OlehHavrilko/darkwebrc/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/OlehHavrilko/darkwebrc?style=flat"></a>
+</p>
 
 ## About
 
-Darkdump is an open-source OSINT tool for deep web investigation. Given a search query it fetches results from multiple dark web search engines, optionally scrapes each result site for emails, metadata, keywords, documents, and images, and streams everything live to either the terminal or a local browser-based interface. All results are automatically filtered against Ahmia's public abuse blacklist regardless of which engine is used.
+`darkwebrc` is a practical fork of **Darkdump**: an OSINT tool for deep web investigation.
 
-## Installation
+It can:
+- Search multiple dark-web engines
+- Stream results live to a local web UI or CLI
+- Optionally deep-scrape result pages (emails, metadata, links, docs, images)
+- Always filter results against Ahmia's public abuse blacklist (regardless of engine)
 
-### Quick install (Linux & macOS)
+This fork focuses on fast local setup (WSL2 / Ubuntu / Termux proot Ubuntu) and a one-command *uncensored* web launch using TorDex.
 
-```bash
-git clone https://github.com/josh0xA/darkdump
-cd darkdump
-chmod +x install.sh
-./install.sh
-darkdump
-```
-Note: ``./install.sh`` might require ``sudo`` for macOS. 
+## Quick Start (Recommended)
 
-This installs all dependencies and creates two commands:
-
-| Command        | Description                                     |
-|----------------|-------------------------------------------------|
-| `darkdump`     | Launch the primary web interface                        |
-| `darkdump-cli` | Run the CLI tool                                |
-
-### Manual install
+### 1) Clone + deps
 
 ```bash
-git clone https://github.com/josh0xA/darkdump
-cd darkdump
-pip3 install -r requirements.txt
-pip3 install -r darkdump-web/requirements.txt
+git clone https://github.com/OlehHavrilko/darkwebrc.git
+cd darkwebrc
+python3 -m venv .venv
+. .venv/bin/activate
+pip install -r requirements.txt
+pip install -r darkdump-web/requirements.txt
 ```
 
-To uninstall the launchers: `./uninstall.sh`
+### 2) Uncensored web (TorDex + Tor proxy)
 
-### Tor Configuration 
-To use Darkdump effectively, you need to configure Tor to allow your script to control it via the Tor control port. Here's how to set up your `torrc` file and verify that Tor is running: <br/>
-
-#### Step 1: Install Tor
-If Tor is not already installed on your system, you need to install it. Here's how you can install Tor on various operating systems:
-
-Debian/Kali/Ubuntu: `sudo apt install tor`<br/>
-MacOS: `brew install tor`<br/>
-
-#### Step 2: Configure the Tor torrc File<br/>
-Locate your torrc file. This file is usually found at `/etc/tor/torrc`on Linux and sometimes Mac. 
-
-Add the following lines to your torrc to enable the control port and set a control port password:
+```bash
+./run-web-uncensored.sh
 ```
-ControlPort 9051
-HashedControlPassword [YourHashedPasswordHere]
-```
-Replace `[YourHashedPasswordHere]` with a hashed password which can be generated using the `tor --hash-password` command: `tor --hash-password "my_password"`
 
-#### Step 3: Start Tor Service
-Linux: `sudo systemctl start tor.service`<br/>
-MacOS: `brew services start tor`<br/>
+Open:
+
+`http://127.0.0.1:50001/?engine=tordex&proxy=1`
+
+### 3) Normal web (no preset)
+
+```bash
+./run-web.sh
+```
+
+## Tor Setup
+
+### Option A: Local Tor for this repo (no systemd)
+
+This repo includes a minimal Tor config and launcher:
+- `torrc.darkdump` (SOCKS `127.0.0.1:9050`, ControlPort `127.0.0.1:9051`)
+- `start-tor.sh`
+
+Run Tor:
+
+```bash
+./start-tor.sh
+```
+
+### Option B: System Tor
+
+Ubuntu:
+
+```bash
+sudo apt update
+sudo apt install tor
+```
 
 ## Search Engines
 
-Six engines are available via `-e` / `--engine`:
+Engines available via `-e` / `--engine`:
 
 | Engine       | Filtered | Requires Tor | Notes                                          |
 |--------------|----------|--------------|------------------------------------------------|
 | `ahmia`      | Yes      | No           | Default. Tor Project-endorsed, strict filtering |
 | `notevil`    | Partial  | Yes          | Ahmia fork with broader index                  |
-| `tordex`     | **No**   | Yes          | Fully uncensored — confirmation required       |
+| `tordex`     | **No**   | No (but recommended) | Fully uncensored — use with caution |
 | `tor66`      | **No**   | Yes          | Crawled index with directory — confirmation required |
 | `onionland`  | **No**   | Yes          | Indexes Tor, I2P, and clearnet — confirmation required |
 | `excavator`  | **No**   | Yes          | General dark web index — confirmation required |
 
-All engines have their results checked against Ahmia's blacklist. Unfiltered engines will prompt for confirmation before executing. This strategy is still not perfect, always use extreme caution and judgement when searching and scraping unfiltered engines. 
-
-## Darkdump Web Preview (Recommended) 
-
-<p align="center">
-  <img src="https://github.com/josh0xA/darkdump/blob/main/imgs/darkdump_example.png?raw=true" alt="Darkdump example">
-</p>
-
+All engines are filtered against Ahmia's abuse blacklist, but *unfiltered engines are still dangerous*. Use strict judgment.
 
 ## CLI Usage
 
@@ -86,6 +97,7 @@ All engines have their results checked against Ahmia's blacklist. Unfiltered eng
 darkdump-cli [-h] [-v] [-q QUERY] [-a AMOUNT] [-e ENGINE]
              [-p] [-s] [-i] [-d] [-u] [-o FILE]
              [--breach] [--breach-deep] [--breach-delay SECONDS]
+             [-y]
 ```
 
 | Flag | Description |
@@ -103,6 +115,7 @@ darkdump-cli [-h] [-v] [-q QUERY] [-a AMOUNT] [-e ENGINE]
 | `--breach-deep` | Combine breach scan with deep scraping of each result |
 | `--breach-delay` | Seconds between breach queries to avoid rate limits (default: 1.5) |
 | `-v`, `--version` | Print version |
+| `-y`, `--yes` | Non-interactive: skip confirmation prompts for unfiltered engines |
 
 ### Examples
 
@@ -131,17 +144,13 @@ darkdump-cli --breach --breach-deep -q example.com -e ahmia
 
 ## Web Interface
 
-Darkdump includes a local browser-based interface.
+Includes a local browser-based interface.
 
 ```bash
-# If installed via install.sh
-darkdump
-
-# Or run directly
-python3 darkdump-web/app.py
+./run-web.sh
 ```
 
-Then open `http://127.0.0.1:50001` in your browser.
+Then open `http://127.0.0.1:50001`.
 
 ### Features
 
@@ -156,8 +165,8 @@ Then open `http://127.0.0.1:50001` in your browser.
 
 ## Ethical Notice
 
-This tool is intended for legitimate security research and OSINT investigations only. The developer, Josh Schiavone, is not responsible for any misuse. Do not use Darkdump to access or investigate sites engaged in illegal activity under the laws and regulations of your jurisdiction. May God bless you all.
+This tool is intended for legitimate security research and OSINT investigations only. Do not use it for illegal activity.
 
 ## License
 
-MIT License — Copyright (c) Josh Schiavone
+MIT License (upstream Darkdump by Josh Schiavone; this repo is a fork with additional glue/scripts).
