@@ -42,7 +42,7 @@ pip install -r darkdump-web/requirements.txt
 ### 2) Uncensored web (TorDex + Tor proxy)
 
 ```bash
-./run-web-uncensored.sh
+./run.sh web --uncensored
 ```
 
 Open:
@@ -52,22 +52,16 @@ Open:
 ### 3) Normal web (no preset)
 
 ```bash
-./run-web.sh
+./run.sh web
 ```
 
 ## Tor Setup
 
 ### Option A: Local Tor for this repo (no systemd)
 
-This repo includes a minimal Tor config and launcher:
+This repo includes a minimal Tor config:
 - `torrc.darkdump` (SOCKS `127.0.0.1:9050`, ControlPort `127.0.0.1:9051`)
-- `start-tor.sh`
-
-Run Tor:
-
-```bash
-./start-tor.sh
-```
+Tor is auto-started by `./run.sh` when needed.
 
 ### Option B: System Tor
 
@@ -149,7 +143,7 @@ darkdump-cli --breach --breach-deep -q example.com -e ahmia
 Includes a local browser-based interface.
 
 ```bash
-./run-web.sh
+./run.sh web
 ```
 
 Then open `http://127.0.0.1:50001`.
