@@ -13,6 +13,8 @@ import csv
 import io
 import queue
 import threading
+import shutil
+import subprocess
 
 from flask import Flask, render_template, request, Response, stream_with_context
 
@@ -530,6 +532,39 @@ def export():
         mimetype='text/plain',
         headers={'Content-Disposition': 'attachment; filename="dwsearch_results.txt"'}
     )
+
+
+def _pick_open_command():
+    env_cmd = os.environ.get('DWS_TOR_BROWSER_CMD', '').strip()
+    if env_cmd:
+        return [env_cmd]
+    if shutil.which('torbrowser-launcher'):
+        return ['torbrowser-launcher']
+    if shutil.which('tor-browser'):
+        return ['tor-browser']
+    if shutil.which('xdg-open'):
+        return ['xdg-open']
+    if shutil.which('open'):
+        return ['open']
+    return None
+
+
+@app.route('/open', methods=['POST'])
+def open_in_tor_browser():
+    body = request.get_json(force=True)
+    url = (body.get('url') or '').strip()
+    if not url:
+        return Response(json.dumps({'ok': False, 'error': 'missing url'}), mimetype='application/json', status=400)
+
+    cmd = _pick_open_command()
+    if not cmd:
+        return Response(json.dumps({'ok': False, 'error': 'no opener found'}), mimetype='application/json', status=500)
+
+    try:
+        subprocess.Popen(cmd + [url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return Response(json.dumps({'ok': True, 'cmd': cmd[0]}), mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({'ok': False, 'error': str(e)}), mimetype='application/json', status=500)
 
 
 if __name__ == '__main__':
