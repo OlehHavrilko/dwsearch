@@ -535,13 +535,41 @@ def export():
 
 
 def _pick_open_command():
+    """
+    Returns a command list prefix (without the URL), or None.
+
+    Notes:
+    - We cannot reliably "force" the Tor Browser app on every OS, but we do best-effort:
+      - Desktop Linux: torbrowser-launcher / tor-browser
+      - macOS: open (user can set default app, or override via env)
+      - Windows/WSL: cmd.exe start (default handler)
+      - Android/Termux: termux-open-url (default handler) or am start VIEW
+    - Override: set DWS_TOR_BROWSER_CMD to an explicit executable name/path.
+    """
     env_cmd = os.environ.get('DWS_TOR_BROWSER_CMD', '').strip()
     if env_cmd:
         return [env_cmd]
+
+    # Preferred: Tor Browser launchers on desktop Linux.
     if shutil.which('torbrowser-launcher'):
         return ['torbrowser-launcher']
     if shutil.which('tor-browser'):
         return ['tor-browser']
+
+    # Android/Termux best-effort.
+    if os.environ.get('TERMUX_VERSION'):
+        if shutil.which('termux-open-url'):
+            return ['termux-open-url']
+        if shutil.which('am'):
+            return ['am', 'start', '-a', 'android.intent.action.VIEW', '-d']
+
+    # WSL: open with Windows default handler.
+    if os.environ.get('WSL_INTEROP') or os.environ.get('WSL_DISTRO_NAME'):
+        if shutil.which('cmd.exe'):
+            # "start" is a cmd builtin; empty title arg prevents URL being treated as title.
+            return ['cmd.exe', '/c', 'start', '']
+
+    # Generic desktop fallbacks.
     if shutil.which('xdg-open'):
         return ['xdg-open']
     if shutil.which('open'):
