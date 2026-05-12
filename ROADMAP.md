@@ -29,6 +29,8 @@ Deliverables:
 - `dwsearch` как пакет
 - простая установка/запуск без привязки к текущей папке
 
+Status: completed — packaged web entrypoint (`dwsearch`), moduleized `dwsearch_web`, and simplified one-command launch.
+
 ---
 
 ## Phase 2 — Config + Profiles (2–3 days)
@@ -47,6 +49,8 @@ Deliverables:
 Deliverables:
 - `dwsearch --config ... --profile ...`
 - предсказуемые дефолты
+
+Status: in progress — config/profile loading is wired, and timeout/retries/backoff now drive runtime HTTP behavior.
 
 ---
 

@@ -46,6 +46,7 @@ from nltk.corpus import stopwords
 from nltk.tokenize import word_tokenize
 from nltk.probability import FreqDist
 from textblob import TextBlob
+from dwsearch.net import with_retries
 
 notice = '''
 Note: 
@@ -212,6 +213,9 @@ class Configuration:
     urls = []
 
     __socks5init__ = "socks5h://localhost:9050"
+    REQUEST_TIMEOUT_S = 20.0
+    REQUEST_RETRIES = 2
+    REQUEST_BACKOFF_S = 0.6
 
     # --- Search engine definitions ---
     # Each engine dict keys:
@@ -350,7 +354,7 @@ class Platform(object):
         # in some Python/OpenSSL combinations; it will redirect to https as needed.
         test_url = 'http://check.torproject.org/api/ip'
         try:
-            response = requests.get(test_url, proxies=proxy_config, timeout=20)
+            response = Dwsearch._request_get(test_url, proxies=proxy_config)
             if response.status_code == 200:
                 data = response.json()
                 if data.get('IsTor', False):
@@ -382,7 +386,7 @@ class AhmiaBlacklist:
         if time.time() - cls._fetched_at < cls.TTL and cls._hashes:
             return
         try:
-            resp = requests.get(cls.BLACKLIST_URL, timeout=15)
+            resp = Dwsearch._request_get(cls.BLACKLIST_URL, timeout=15)
             resp.raise_for_status()
             cls._hashes = {line.strip() for line in resp.text.splitlines() if len(line.strip()) == 32}
             cls._fetched_at = time.time()
@@ -407,6 +411,21 @@ class AhmiaBlacklist:
 
 
 class Dwsearch(object):
+    @staticmethod
+    def _request_get(url, *, headers=None, proxies=None, timeout=None):
+        timeout_s = float(timeout if timeout is not None else Configuration.REQUEST_TIMEOUT_S)
+        retries = int(Configuration.REQUEST_RETRIES)
+        backoff_s = float(Configuration.REQUEST_BACKOFF_S)
+
+        def _do():
+            kwargs = {"timeout": timeout_s}
+            if headers is not None:
+                kwargs["headers"] = headers
+            if proxies:
+                kwargs["proxies"] = proxies
+            return requests.get(url, **kwargs)
+
+        return with_retries(_do, retries=retries, backoff_s=backoff_s)
 
 
     @staticmethod
@@ -501,11 +520,8 @@ class Dwsearch(object):
         Result markup: <li class="result"> containing <a>, <cite>, <p>.
         """
         engine = Configuration.SEARCH_ENGINES['ahmia']
-        req_kwargs = {'headers': headers, 'timeout': 15}
-        if proxy_config:
-            req_kwargs['proxies'] = proxy_config
 
-        homepage = requests.get(engine['base'], **req_kwargs)
+        homepage = self._request_get(engine['base'], headers=headers, proxies=proxy_config if proxy_config else None, timeout=15)
         if homepage.status_code != 200:
             raise Exception(f"Couldn't fetch {engine['base']} (HTTP {homepage.status_code})")
 
@@ -517,7 +533,7 @@ class Dwsearch(object):
         nonce = f"&{nonce_el.attrs['name']}={nonce_el.attrs['value']}"
         url = engine['api'].format(query=query) + nonce
 
-        page = requests.get(url, **req_kwargs)
+        page = self._request_get(url, headers=headers, proxies=proxy_config if proxy_config else None, timeout=15)
         if page.status_code != 200:
             raise Exception(f"Ahmia search request failed (HTTP {page.status_code})")
 
@@ -566,7 +582,7 @@ class Dwsearch(object):
         response = None
         for path in search_paths:
             try:
-                r = requests.get(base + path, headers=headers, proxies=proxy_config, timeout=30)
+                r = self._request_get(base + path, headers=headers, proxies=proxy_config, timeout=30)
                 if r.status_code == 200:
                     response = r
                     break
@@ -630,10 +646,10 @@ class Dwsearch(object):
 
         if proxy_config:
             url = engine['onion'].format(query=q)
-            response = requests.get(url, headers=headers, proxies=proxy_config, timeout=30)
+            response = self._request_get(url, headers=headers, proxies=proxy_config, timeout=30)
         else:
             url = engine['api'].format(query=q)
-            response = requests.get(url, headers=headers, timeout=20)
+            response = self._request_get(url, headers=headers, timeout=20)
 
         if response.status_code != 200:
             raise Exception(f"TorDex request failed (HTTP {response.status_code})")
@@ -687,7 +703,7 @@ class Dwsearch(object):
         """
         engine = Configuration.SEARCH_ENGINES['tor66']
         url = engine['onion'].format(query=requests.utils.quote(query))
-        response = requests.get(url, headers=headers, proxies=proxy_config, timeout=30)
+        response = self._request_get(url, headers=headers, proxies=proxy_config, timeout=30)
         if response.status_code != 200:
             raise Exception(f"Tor66 request failed (HTTP {response.status_code})")
 
@@ -761,7 +777,7 @@ class Dwsearch(object):
 
         engine = Configuration.SEARCH_ENGINES['onionland']
         url = engine['onion'].format(query=requests.utils.quote(query))
-        response = requests.get(url, headers=headers, proxies=proxy_config, timeout=30)
+        response = self._request_get(url, headers=headers, proxies=proxy_config, timeout=30)
         if response.status_code != 200:
             raise Exception(f"OnionLand request failed (HTTP {response.status_code})")
 
@@ -845,7 +861,7 @@ class Dwsearch(object):
         response = None
         for path in search_paths:
             try:
-                r = requests.get(base + path, headers=headers, proxies=proxy_config, timeout=30)
+                r = self._request_get(base + path, headers=headers, proxies=proxy_config, timeout=30)
                 if r.status_code == 200:
                     response = r
                     break
@@ -908,7 +924,7 @@ class Dwsearch(object):
         and optionally images. Returns a dict for ResultSaver, or None on failure.
         """
         try:
-            site_response = requests.get(site_url, headers=headers, proxies=proxy_config, timeout=20)
+            site_response = self._request_get(site_url, headers=headers, proxies=proxy_config, timeout=20)
             site_soup     = BeautifulSoup(site_response.content, 'html.parser')
             metadata      = self.extract_metadata(site_soup)
             links         = self.extract_links(site_soup)
@@ -1540,7 +1556,7 @@ def dwsearch_main():
     )
     parser.add_argument(
         "--profile",
-        help="config profile name (optional, default: uncensored)",
+        help="config profile name (optional, e.g. fast/deep)",
         type=str, default=None, metavar="NAME",
     )
     parser.add_argument(
@@ -1595,6 +1611,9 @@ def dwsearch_main():
         from dwsearch.config import load_runtime_config
         rcfg = load_runtime_config(args.config, args.profile)
         Configuration.__socks5init__ = rcfg.socks5_url
+        Configuration.REQUEST_TIMEOUT_S = rcfg.timeout_s
+        Configuration.REQUEST_RETRIES = rcfg.retries
+        Configuration.REQUEST_BACKOFF_S = rcfg.backoff_s
         if args.engine is None:
             args.engine = rcfg.default_engine
         if args.amount is None:

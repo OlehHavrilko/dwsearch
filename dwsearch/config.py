@@ -33,7 +33,7 @@ class RuntimeConfig:
     default_amount: int = 10
     concurrency: int = 6
     headers_preset: str = "random"
-    profile: str = "uncensored"
+    profile: str = "default"
     extra: dict[str, Any] = field(default_factory=dict)
 
 
@@ -45,7 +45,7 @@ def load_runtime_config(path: str | None, profile: str | None) -> RuntimeConfig:
             data = _load_toml(p)
 
     profiles = data.get("profiles", {}) if isinstance(data.get("profiles", {}), dict) else {}
-    prof = profile or data.get("profile") or "uncensored"
+    prof = profile or data.get("profile") or "default"
     selected = profiles.get(prof, {}) if isinstance(profiles.get(prof, {}), dict) else {}
 
     merged = _deep_merge(data.get("defaults", {}) if isinstance(data.get("defaults", {}), dict) else {}, selected)
@@ -65,4 +65,3 @@ def load_runtime_config(path: str | None, profile: str | None) -> RuntimeConfig:
             "default_amount", "concurrency", "headers_preset",
         }},
     )
-

@@ -37,7 +37,6 @@ python3 -m venv .venv
 . .venv/bin/activate
 pip install -e .
 pip install -r requirements.txt
-pip install -r dwsearch-web/requirements.txt
 ```
 
 ### 2) Web launch with Tor
@@ -47,6 +46,20 @@ dwsearch
 ```
 
 Open `http://127.0.0.1:50001`
+
+### 3) Config profiles (Phase 2)
+
+```bash
+cp dwsearch.example.toml dwsearch.toml
+```
+
+```bash
+dwsearch --config dwsearch.toml --profile fast
+```
+
+```bash
+dwsearch --config dwsearch.toml --profile deep
+```
 
 ## Tor Setup
 

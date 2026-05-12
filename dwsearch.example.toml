@@ -7,6 +7,11 @@ default_engine = "tordex"
 default_amount = 10
 concurrency = 6
 headers_preset = "random"
+profile = "default"
+
+[profiles.default]
+default_engine = "tordex"
+default_amount = 10
 
 [profiles.fast]
 default_amount = 10
@@ -17,4 +22,3 @@ retries = 1
 timeout_s = 35.0
 retries = 3
 backoff_s = 1.0
-
