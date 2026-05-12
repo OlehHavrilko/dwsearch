@@ -1,0 +1,14 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dwsearch"
+version = "0.0.0"
+description = "Deep web search + web UI"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.scripts]
+dwsearch = "dwsearch.core:dwsearch_main"
+

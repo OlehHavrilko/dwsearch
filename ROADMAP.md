@@ -19,7 +19,7 @@ Done/keeping stable: чтобы дальнейшие изменения не л�
 
 Цель: нормальная структура проекта и удобный запуск без “магии”.
 
-- Разнести код из `dwsearch.py` в пакет `dwsearch/` (модули: engines, http, scrape, export, utils).
+- Разнести код в пакет `dwsearch/` (модули: engines, http, scrape, export, utils).
 - Сделать запуск `python -m dwsearch` и консольную команду `dwsearch` (entrypoint).
 - Переименовать/структурировать `dwsearch-web` как модуль `dwsearch_web/`.
 - Унифицировать конфиги/пути: один “root locator”, никаких хардкодов имён файлов.
@@ -70,6 +70,8 @@ Deliverables:
 - движки как модули, легко добавлять новые
 - стабильный формат результата для Web/CLI/экспорта
 
+Status: started — added `dwsearch/engines.py` as a minimal typed engine layer wrapper.
+
 ---
 
 ## Phase 4 — Networking + Tor Reliability (2–4 days)
@@ -90,6 +92,8 @@ Deliverables:
 Deliverables:
 - меньше “подвисаний” и необъяснимых падений
 - удобная диагностика
+
+Status: started — added config-driven retry/backoff primitives and `./run.sh tor-log`.
 
 ---
 
@@ -192,4 +196,3 @@ Deliverables:
 - “Artifacts”: сохранение сырого HTML ответа движка для дебага.
 - Rate-limit profiles per engine (у некоторых движков более жёсткие ограничения).
 - Простая система “blocks/allowlists” для доменов/оніонів (это не safety, а фильтрация по задаче).
-

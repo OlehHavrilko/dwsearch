@@ -1131,9 +1131,9 @@ class Dwsearch(object):
 
         Usage
         -----
-        python3 dwsearch.py --breach -q "example.com" -e ahmia
-        python3 dwsearch.py --breach -q "admin@corp.com" -e notevil -p --breach-deep
-        python3 dwsearch.py --breach -q "john_doe" -e tor66 -o report.json
+        python3 -m dwsearch --breach -q "example.com" -e ahmia
+        python3 -m dwsearch --breach -q "admin@corp.com" -e notevil -p --breach-deep
+        python3 -m dwsearch --breach -q "john_doe" -e tor66 -o report.json
         """
         import time as _time
         import hashlib as _hashlib
@@ -1525,14 +1525,24 @@ def dwsearch_main():
     )
     parser.add_argument("-v", "--version", help="returns dwsearch's version", action="store_true")
     parser.add_argument("-q", "--query",   help="the keyword or string you want to search on the deepweb", type=str)
-    parser.add_argument("-a", "--amount",  help="the amount of results you want to retrieve", type=int, default=10)
+    parser.add_argument("-a", "--amount",  help="the amount of results you want to retrieve", type=int, default=None)
     parser.add_argument("-p", "--proxy",   help="use tor proxy for scraping", action="store_true")
     parser.add_argument("-i", "--images",  help="scrape images and visual content from the site", action="store_true")
     parser.add_argument("-s", "--scrape",  help="scrape the actual site for content and look for keywords", action="store_true")
     parser.add_argument("-d", "--debug",   help="enable debug output", action="store_true")
     parser.add_argument("-u", "--unique",  help="hide duplicate results that share the same title and description (metadata-based deduplication)", action="store_true")
-    parser.add_argument("-e", "--engine",  help=engine_help, type=str, default='ahmia',
+    parser.add_argument("-e", "--engine",  help=engine_help, type=str, default=None,
                         choices=Configuration.VALID_ENGINES, metavar='ENGINE')
+    parser.add_argument(
+        "--config",
+        help="path to dwsearch config TOML (optional)",
+        type=str, default=None, metavar="FILE",
+    )
+    parser.add_argument(
+        "--profile",
+        help="config profile name (optional, default: uncensored)",
+        type=str, default=None, metavar="NAME",
+    )
     parser.add_argument(
         "--breach",
         help=(
@@ -1541,7 +1551,7 @@ def dwsearch_main():
             "paste-site operators, hash types, username permutations, and stealer log terms. "
             "extracts credential artefacts from result snippets and classifies results by "
             "severity (CRITICAL/HIGH/MEDIUM/INFO) and category (paste-site/forum/market/leak-index). "
-            "example: dwsearch.py --breach -q admin@example.com -e notevil -p"
+            "example: python3 -m dwsearch --breach -q admin@example.com -e notevil -p"
         ),
         action="store_true",
     )
@@ -1579,6 +1589,22 @@ def dwsearch_main():
     )
 
     args = parser.parse_args()
+
+    # Phase 2: runtime config + profiles
+    try:
+        from dwsearch.config import load_runtime_config
+        rcfg = load_runtime_config(args.config, args.profile)
+        Configuration.__socks5init__ = rcfg.socks5_url
+        if args.engine is None:
+            args.engine = rcfg.default_engine
+        if args.amount is None:
+            args.amount = rcfg.default_amount
+    except Exception:
+        # Config is optional; ignore failures to keep "works out of the box".
+        if args.engine is None:
+            args.engine = 'ahmia'
+        if args.amount is None:
+            args.amount = 10
 
     if args.version:
         print(Colors.BOLD + Colors.B + f"Dwsearch Version: {__version__}\n" + Colors.END)

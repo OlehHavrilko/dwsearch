@@ -8,12 +8,14 @@ usage() {
 Usage:
   ./run.sh web [--uncensored]
   ./run.sh cli [args...]
+  ./run.sh tor-log
 
 Commands:
   web           Run the web UI on http://127.0.0.1:50001
   web --uncensored
                 Same as web, but prints a TorDex+proxy preset URL
-  cli           Run the CLI (passes remaining args to dwsearch.py)
+  cli           Run the CLI (passes remaining args to dwsearch)
+  tor-log       Tail Tor log (/tmp/tor-dwsearch.log)
 
 Tor:
   If 127.0.0.1:9050 is not listening, Tor is started automatically using torrc.dwsearch
@@ -67,7 +69,10 @@ case "$cmd" in
     ;;
   cli)
     ensure_tor
-    exec "$HERE/.venv/bin/python" "$HERE/dwsearch.py" "$@"
+    exec "$HERE/.venv/bin/python" -m dwsearch "$@"
+    ;;
+  tor-log)
+    tail -f /tmp/tor-dwsearch.log
     ;;
   -h|--help|"")
     usage

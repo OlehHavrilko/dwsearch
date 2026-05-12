@@ -34,10 +34,10 @@ def _find_dwsearch_root():
             break
         cwd = parent
     for d in candidates:
-        if os.path.isfile(os.path.join(d, 'dwsearch.py')):
+        if os.path.isfile(os.path.join(d, 'dwsearch', '__init__.py')):
             return d
     raise ImportError(
-        "Could not find dwsearch.py.\n"
+        "Could not find dwsearch package.\n"
         "Place dwsearch_webapp/ inside the dwsearch project folder and run:\n"
         "  python dwsearch_webapp/app.py"
     )

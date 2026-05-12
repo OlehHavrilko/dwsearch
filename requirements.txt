@@ -14,3 +14,4 @@ termcolor==2.5.0
 textblob==0.18.0.post0
 tqdm==4.67.1
 urllib3==2.2.3
+tomli==2.0.1

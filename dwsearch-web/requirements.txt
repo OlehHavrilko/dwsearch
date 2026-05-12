@@ -5,3 +5,4 @@ html5lib
 nltk>=3.8.0
 textblob>=0.18.0
 PySocks>=1.7.1
+tomli>=2.0.0
