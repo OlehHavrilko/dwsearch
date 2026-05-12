@@ -24,6 +24,8 @@ It can:
 
 This fork focuses on fast local setup (WSL2 / Ubuntu / Termux proot Ubuntu) and a one-command *uncensored* web launch using TorDex.
 
+Author / maintainer of this fork: **Oleh Havrilko**.
+
 ## Quick Start (Recommended)
 
 ### 1) Clone + deps
