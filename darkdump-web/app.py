@@ -68,7 +68,8 @@ def _check_tor(proxy_config: dict):
     """Returns (is_tor: bool, ip: str)."""
     try:
         r = requests.get(
-            'https://check.torproject.org/api/ip',
+            # http URL avoids occasional SSL handshake failures through SOCKS in some environments.
+            'http://check.torproject.org/api/ip',
             proxies=proxy_config, timeout=15
         )
         if r.status_code == 200:

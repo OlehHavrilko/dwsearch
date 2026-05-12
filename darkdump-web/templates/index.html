@@ -265,6 +265,30 @@ button.abort:hover { background: rgba(248,81,73,0.1); }
 
 const engines = {{ engines | tojson }};
 
+// ── URL Defaults ──
+// Supports: ?engine=tordex&proxy=1&dedupe=1&scrape=0&images=0&amount=10&mode=search
+function applyUrlDefaults() {
+  const p = new URLSearchParams(window.location.search);
+  const mode = (p.get('mode') || '').toLowerCase();
+  if (mode === 'breach') setMode('breach');
+
+  const engine = (p.get('engine') || '').toLowerCase();
+  if (engine && engines[engine]) document.getElementById('engine').value = engine;
+
+  const amount = parseInt(p.get('amount') || '', 10);
+  if (!Number.isNaN(amount)) document.getElementById('amount').value = String(Math.max(1, Math.min(50, amount)));
+
+  const asBool = (v) => v === '1' || v === 'true' || v === 'yes' || v === 'on';
+  const proxy = p.get('proxy');   if (proxy != null) document.getElementById('flag-proxy').checked = asBool(proxy);
+  const dedupe = p.get('dedupe'); if (dedupe != null) document.getElementById('flag-dedupe').checked = asBool(dedupe);
+  const scrape = p.get('scrape'); if (scrape != null) document.getElementById('flag-scrape').checked = asBool(scrape);
+  const images = p.get('images'); if (images != null) document.getElementById('flag-images').checked = asBool(images);
+
+  // Breach proxy flag
+  const bproxy = p.get('bproxy');
+  if (bproxy != null) document.getElementById('flag-breach-proxy').checked = asBool(bproxy);
+}
+
 // ── Mode ──
 let currentMode = 'search';
 
@@ -314,6 +338,8 @@ function updateEngineUI() {
 document.getElementById('engine').addEventListener('change', updateEngineUI);
 document.getElementById('flag-scrape').addEventListener('change', updateEngineUI);
 updateEngineUI();
+applyUrlDefaults();
+updateEngineUI();
 
 // ── Tor badge ──
 const torBadge  = document.getElementById('tor-badge');
@@ -338,6 +364,11 @@ document.getElementById('flag-breach-proxy').addEventListener('change', function
   if (this.checked) checkTorStatus();
   else { torBadge.style.display = 'none'; torBadge.classList.remove('active'); }
 });
+
+// If URL defaults enabled proxy, show Tor status immediately.
+if (document.getElementById('flag-proxy').checked || document.getElementById('flag-breach-proxy').checked) {
+  checkTorStatus();
+}
 
 // ── State ──
 let evtSource   = null;

@@ -1,0 +1,19 @@
+## Minimal Tor config for running Darkdump locally (no systemd required).
+##
+## Starts:
+##   - SOCKS proxy on 127.0.0.1:9050
+##   - ControlPort on 127.0.0.1:9051 (cookie auth)
+##
+## Run:
+##   tor -f ./torrc.darkdump
+##
+
+SocksPort 127.0.0.1:9050
+ControlPort 127.0.0.1:9051
+
+CookieAuthentication 1
+CookieAuthFileGroupReadable 1
+
+DataDirectory /tmp/tor-darkdump
+Log notice stdout
+

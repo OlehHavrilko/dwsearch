@@ -346,7 +346,9 @@ class Platform(object):
                 os.system('cls')
 
     def check_tor_connection(self, proxy_config):
-        test_url = 'https://check.torproject.org/api/ip'
+        # Using the http URL avoids occasional SSL handshake failures through SOCKS
+        # in some Python/OpenSSL combinations; it will redirect to https as needed.
+        test_url = 'http://check.torproject.org/api/ip'
         try:
             response = requests.get(test_url, proxies=proxy_config, timeout=20)
             if response.status_code == 200:
@@ -959,7 +961,7 @@ class Darkdump(object):
 
     def crawl(self, query, amount, engine_key='ahmia', use_proxy=False,
               scrape_sites=False, scrape_images=False, debug_mode=False,
-              output_file=None, dedupe=False):
+              output_file=None, dedupe=False, assume_yes_unfiltered=False):
 
         engine_key = engine_key.lower()
         if engine_key not in Configuration.SEARCH_ENGINES:
@@ -987,7 +989,7 @@ class Darkdump(object):
             use_proxy = True
 
         # Warn and confirm when using an unfiltered engine
-        if not engine.get('filtered', True):
+        if not engine.get('filtered', True) and not assume_yes_unfiltered:
             print(
                 f"\n{Colors.BOLD + Colors.R}[!] WARNING: {engine['name']} is an unfiltered search engine.{Colors.END}\n"
                 f"{Colors.BOLD + Colors.O}    Results may include illegal, harmful, or disturbing content.\n"
@@ -1566,6 +1568,15 @@ def darkdump_main():
         ),
         type=str, default=None, metavar='FILE',
     )
+    parser.add_argument(
+        "-y", "--yes",
+        help=(
+            "do not prompt for confirmation when using unfiltered search engines "
+            "(tordex/tor66/onionland/excavator). Useful for non-interactive runs."
+        ),
+        action="store_true",
+        dest="assume_yes_unfiltered",
+    )
 
     args = parser.parse_args()
 
@@ -1573,10 +1584,17 @@ def darkdump_main():
         print(Colors.BOLD + Colors.B + f"Darkdump Version: {__version__}\n" + Colors.END)
 
     if args.proxy and not args.scrape and not args.breach and not args.breach_deep:
-        print(Colors.BOLD + Colors.R +
-              "Error: Proxy option '-p' must be used with the scraping option '-s' (or --breach)." + Colors.END)
-        parser.print_help()
-        sys.exit(1)
+        # Proxy is also valid for Tor-only search engines (e.g. notevil/tor66/onionland/excavator).
+        engine = Configuration.SEARCH_ENGINES.get(args.engine, {})
+        if not engine.get('tor_required', False):
+            print(
+                Colors.BOLD + Colors.R +
+                "Error: Proxy option '-p' must be used with the scraping option '-s' "
+                "(or --breach), unless the selected engine is Tor-only." +
+                Colors.END
+            )
+            parser.print_help()
+            sys.exit(1)
 
     if args.images and not args.scrape:
         print(Colors.BOLD + Colors.R +
@@ -1598,7 +1616,7 @@ def darkdump_main():
                   "Error: --breach requires a target via -q (email, domain, username, or keyword)." + Colors.END)
             sys.exit(1)
         engine = Configuration.SEARCH_ENGINES.get(args.engine, {})
-        if not engine.get('filtered', True):
+        if not engine.get('filtered', True) and not args.assume_yes_unfiltered:
             print(
                 f"\n{Colors.BOLD + Colors.R}[!] WARNING: {engine.get('name', args.engine)} is an unfiltered engine.{Colors.END}\n"
                 f"{Colors.BOLD + Colors.O}    Results may include illegal or harmful content. "
@@ -1637,6 +1655,7 @@ def darkdump_main():
             debug_mode=args.debug,
             output_file=args.output,
             dedupe=args.unique,
+            assume_yes_unfiltered=args.assume_yes_unfiltered,
         )
     else:
         print("[~] Note: No query arguments were passed. Please supply a query to search.")
