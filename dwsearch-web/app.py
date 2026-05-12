@@ -13,6 +13,8 @@ import csv
 import io
 import queue
 import threading
+import shutil
+import subprocess
 
 from flask import Flask, render_template, request, Response, stream_with_context
 
@@ -530,6 +532,67 @@ def export():
         mimetype='text/plain',
         headers={'Content-Disposition': 'attachment; filename="dwsearch_results.txt"'}
     )
+
+
+def _pick_open_command():
+    """
+    Returns a command list prefix (without the URL), or None.
+
+    Notes:
+    - We cannot reliably "force" the Tor Browser app on every OS, but we do best-effort:
+      - Desktop Linux: torbrowser-launcher / tor-browser
+      - macOS: open (user can set default app, or override via env)
+      - Windows/WSL: cmd.exe start (default handler)
+      - Android/Termux: termux-open-url (default handler) or am start VIEW
+    - Override: set DWS_TOR_BROWSER_CMD to an explicit executable name/path.
+    """
+    env_cmd = os.environ.get('DWS_TOR_BROWSER_CMD', '').strip()
+    if env_cmd:
+        return [env_cmd]
+
+    # Preferred: Tor Browser launchers on desktop Linux.
+    if shutil.which('torbrowser-launcher'):
+        return ['torbrowser-launcher']
+    if shutil.which('tor-browser'):
+        return ['tor-browser']
+
+    # Android/Termux best-effort.
+    if os.environ.get('TERMUX_VERSION'):
+        if shutil.which('termux-open-url'):
+            return ['termux-open-url']
+        if shutil.which('am'):
+            return ['am', 'start', '-a', 'android.intent.action.VIEW', '-d']
+
+    # WSL: open with Windows default handler.
+    if os.environ.get('WSL_INTEROP') or os.environ.get('WSL_DISTRO_NAME'):
+        if shutil.which('cmd.exe'):
+            # "start" is a cmd builtin; empty title arg prevents URL being treated as title.
+            return ['cmd.exe', '/c', 'start', '']
+
+    # Generic desktop fallbacks.
+    if shutil.which('xdg-open'):
+        return ['xdg-open']
+    if shutil.which('open'):
+        return ['open']
+    return None
+
+
+@app.route('/open', methods=['POST'])
+def open_in_tor_browser():
+    body = request.get_json(force=True)
+    url = (body.get('url') or '').strip()
+    if not url:
+        return Response(json.dumps({'ok': False, 'error': 'missing url'}), mimetype='application/json', status=400)
+
+    cmd = _pick_open_command()
+    if not cmd:
+        return Response(json.dumps({'ok': False, 'error': 'no opener found'}), mimetype='application/json', status=500)
+
+    try:
+        subprocess.Popen(cmd + [url], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        return Response(json.dumps({'ok': True, 'cmd': cmd[0]}), mimetype='application/json')
+    except Exception as e:
+        return Response(json.dumps({'ok': False, 'error': str(e)}), mimetype='application/json', status=500)
 
 
 if __name__ == '__main__':

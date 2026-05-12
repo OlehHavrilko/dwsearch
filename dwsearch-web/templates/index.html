@@ -164,6 +164,12 @@ button.abort:hover { background: rgba(248,81,73,0.1); }
 .rc-url { color: var(--muted); font-size: 11px; margin-bottom: 6px; word-break: break-all; }
 .rc-desc { color: var(--text); font-family: var(--sans); font-size: 12px;
   opacity: 0.75; line-height: 1.55; }
+.rc-actions { margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap; }
+.btn-mini { font-size: 11px; padding: 6px 9px; border-radius: 2px; border: 1px solid var(--border);
+  background: var(--bg); color: var(--text); cursor: pointer; }
+.btn-mini:hover { border-color: var(--border2); }
+.btn-mini.primary { border-color: rgba(88,166,255,0.35); color: var(--accent); }
+.btn-mini.danger { border-color: rgba(255,123,114,0.25); color: var(--critical); }
 .scrape-data { margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border);
   display: grid; grid-template-columns: 90px 1fr; gap: 3px 8px; font-size: 11px; }
 .sd-key { color: var(--muted); }
@@ -463,11 +469,56 @@ function renderResult(d, isBreach) {
     <div class="rc-title">${esc(d.title)}</div>
     <div class="rc-url">${esc(d.url)}</div>
     <div class="rc-desc">${esc(d.description)}</div>
+    <div class="rc-actions">
+      <a class="btn-mini primary" href="${esc(d.url)}" target="_blank" rel="noreferrer">Open</a>
+      <button class="btn-mini" type="button" data-open-tor="${esc(d.url)}">Open in Tor Browser</button>
+      <button class="btn-mini danger" type="button" data-copy-url="${esc(d.url)}">Copy URL</button>
+    </div>
     ${artefactsHtml}
     ${scrapeHtml}`;
   outputBox.appendChild(card);
   outputBox.scrollTop = outputBox.scrollHeight;
 }
+
+async function openInTorBrowser(url) {
+  try {
+    const r = await fetch('/open', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({url})
+    });
+    const d = await r.json();
+    if (!r.ok || !d.ok) throw new Error(d.error || 'failed');
+    appendLog(`Open in Tor Browser: ${d.cmd}`, 'ok');
+  } catch (e) {
+    appendLog(`Open in Tor Browser failed: ${e.message}`, 'err');
+  }
+}
+
+async function copyToClipboard(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    appendLog('Copied URL to clipboard.', 'ok');
+  } catch {
+    // fallback
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    appendLog('Copied URL to clipboard.', 'ok');
+  }
+}
+
+outputBox.addEventListener('click', (ev) => {
+  const t = ev.target;
+  if (!(t instanceof HTMLElement)) return;
+  const torUrl = t.getAttribute('data-open-tor');
+  if (torUrl) { openInTorBrowser(torUrl); return; }
+  const copyUrl = t.getAttribute('data-copy-url');
+  if (copyUrl) { copyToClipboard(copyUrl); return; }
+});
 
 // ── Common SSE wiring ──
 function wireSSE(url, isBreach) {
