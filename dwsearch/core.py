@@ -216,6 +216,8 @@ class Configuration:
     REQUEST_TIMEOUT_S = 20.0
     REQUEST_RETRIES = 2
     REQUEST_BACKOFF_S = 0.6
+    HEADERS_PRESET = "random"
+    CONCURRENCY = 6
 
     # --- Search engine definitions ---
     # Each engine dict keys:
@@ -411,6 +413,12 @@ class AhmiaBlacklist:
 
 
 class Dwsearch(object):
+    @staticmethod
+    def _pick_headers():
+        if Configuration.HEADERS_PRESET == "fixed":
+            return {'User-Agent': Headers.user_agents[0]}
+        return {'User-Agent': random.choice(Headers.user_agents)}
+
     @staticmethod
     def _request_get(url, *, headers=None, proxies=None, timeout=None):
         timeout_s = float(timeout if timeout is not None else Configuration.REQUEST_TIMEOUT_S)
@@ -986,7 +994,7 @@ class Dwsearch(object):
             return
 
         engine  = Configuration.SEARCH_ENGINES[engine_key]
-        headers = {'User-Agent': random.choice(Headers.user_agents)}
+        headers = self._pick_headers()
         proxy_config = {
             'http':  Configuration.__socks5init__,
             'https': Configuration.__socks5init__,
@@ -1357,7 +1365,7 @@ class Dwsearch(object):
             print(f"{Colors.BOLD + Colors.C}[{q_idx}/{len(queries)}]{Colors.END} {query}")
 
             try:
-                headers = {'User-Agent': random.choice(Headers.user_agents)}
+                headers = self._pick_headers()
                 results = []
 
                 if engine_key == 'ahmia':
@@ -1614,6 +1622,8 @@ def dwsearch_main():
         Configuration.REQUEST_TIMEOUT_S = rcfg.timeout_s
         Configuration.REQUEST_RETRIES = rcfg.retries
         Configuration.REQUEST_BACKOFF_S = rcfg.backoff_s
+        Configuration.HEADERS_PRESET = rcfg.headers_preset
+        Configuration.CONCURRENCY = rcfg.concurrency
         if args.engine is None:
             args.engine = rcfg.default_engine
         if args.amount is None:

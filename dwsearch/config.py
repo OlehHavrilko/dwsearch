@@ -23,6 +23,14 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return out
 
 
+def resolve_config_path(path: str | None) -> Path | None:
+    if path:
+        p = Path(path).expanduser()
+        return p if p.is_file() else None
+    default = Path("dwsearch.toml")
+    return default if default.is_file() else None
+
+
 @dataclass(frozen=True)
 class RuntimeConfig:
     socks5_url: str = "socks5h://localhost:9050"
@@ -39,10 +47,9 @@ class RuntimeConfig:
 
 def load_runtime_config(path: str | None, profile: str | None) -> RuntimeConfig:
     data: dict[str, Any] = {}
-    if path:
-        p = Path(path).expanduser()
-        if p.is_file():
-            data = _load_toml(p)
+    resolved = resolve_config_path(path)
+    if resolved is not None:
+        data = _load_toml(resolved)
 
     profiles = data.get("profiles", {}) if isinstance(data.get("profiles", {}), dict) else {}
     prof = profile or data.get("profile") or "default"

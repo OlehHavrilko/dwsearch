@@ -61,6 +61,8 @@ dwsearch --config dwsearch.toml --profile fast
 dwsearch --config dwsearch.toml --profile deep
 ```
 
+If `dwsearch.toml` exists in the project root, `dwsearch` loads it automatically.
+
 ## Tor Setup
 
 ### Option A: Local Tor for this repo (no systemd)
