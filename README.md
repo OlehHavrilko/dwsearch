@@ -22,7 +22,7 @@ It can:
 - Optionally deep-scrape result pages (emails, metadata, links, docs, images)
 - Always filter results against Ahmia's public abuse blacklist (regardless of engine)
 
-This fork focuses on fast local setup (WSL2 / Ubuntu / Termux proot Ubuntu) and a one-command *uncensored* web launch using TorDex.
+This fork focuses on fast local setup (WSL2 / Ubuntu / Termux proot Ubuntu) and a one-command web launch with Tor auto-start.
 
 Author / maintainer of this fork: **Oleh Havrilko**.
 
@@ -39,21 +39,13 @@ pip install -r requirements.txt
 pip install -r dwsearch-web/requirements.txt
 ```
 
-### 2) Uncensored web (TorDex + Tor proxy)
+### 2) Web launch with Tor
 
 ```bash
-./run.sh web --uncensored
+./run.sh
 ```
 
-Open:
-
-`http://127.0.0.1:50001/?engine=tordex&proxy=1`
-
-### 3) Normal web (no preset)
-
-```bash
-./run.sh web
-```
+Open `http://127.0.0.1:50001`
 
 ## Tor Setup
 
@@ -80,70 +72,19 @@ Engines available via `-e` / `--engine`:
 |--------------|----------|--------------|------------------------------------------------|
 | `ahmia`      | Yes      | No           | Default. Tor Project-endorsed, strict filtering |
 | `notevil`    | Partial  | Yes          | Ahmia fork with broader index                  |
-| `tordex`     | **No**   | No (but recommended) | Fully uncensored — use with caution |
+| `tordex`     | **No**   | No (but recommended) | Unfiltered — use with caution |
 | `tor66`      | **No**   | Yes          | Crawled index with directory — confirmation required |
 | `onionland`  | **No**   | Yes          | Indexes Tor, I2P, and clearnet — confirmation required |
 | `excavator`  | **No**   | Yes          | General dark web index — confirmation required |
 
 All engines are filtered against Ahmia's abuse blacklist, but *unfiltered engines are still dangerous*. Use strict judgment.
 
-## CLI Usage
-
-```
-dwsearch-cli [-h] [-v] [-q QUERY] [-a AMOUNT] [-e ENGINE]
-             [-p] [-s] [-i] [-d] [-u] [-o FILE]
-             [--breach] [--breach-deep] [--breach-delay SECONDS]
-             [-y]
-```
-
-| Flag | Description |
-|------|-------------|
-| `-q`, `--query` | Search query |
-| `-a`, `--amount` | Number of results to retrieve (default: 10) |
-| `-e`, `--engine` | Engine to use (default: `ahmia`) |
-| `-p`, `--proxy` | Route requests through Tor |
-| `-s`, `--scrape` | Deep scrape each result for metadata, links, emails, documents |
-| `-i`, `--images` | Also collect images during scrape (requires `-s`) |
-| `-u`, `--unique` | Hide results with duplicate title + description |
-| `-d`, `--debug` | Enable debug output |
-| `-o FILE`, `--output FILE` | Save results to file — format inferred from extension (`.json`, `.csv`, `.txt`) |
-| `--breach` | Run a breach / credential leak intelligence scan for the given target |
-| `--breach-deep` | Combine breach scan with deep scraping of each result |
-| `--breach-delay` | Seconds between breach queries to avoid rate limits (default: 1.5) |
-| `-v`, `--version` | Print version |
-| `-y`, `--yes` | Non-interactive: skip confirmation prompts for unfiltered engines |
-
-### Examples
-
-```bash
-# Basic search via Ahmia (no Tor required)
-dwsearch-cli -q "privacy tools" -a 10
-
-# Search and deep scrape each result via Tor
-dwsearch-cli -q "hacking" -a 10 -s -p
-
-# Search, scrape, and collect images
-dwsearch-cli -q "marketplaces" -a 15 -s -p -i
-
-# Use Not Evil engine, deduplicate, save to JSON
-dwsearch-cli -q "security research" -a 20 -e notevil -p -u -o results.json
-
-# Use OnionLand engine, save to CSV
-dwsearch-cli -q "crypto" -a 10 -e onionland -p -o results.csv
-
-# Breach intelligence scan for an email address
-dwsearch-cli --breach -q admin@example.com -e ahmia -p
-
-# Breach scan with deep scraping
-dwsearch-cli --breach --breach-deep -q example.com -e ahmia
-```
-
 ## Web Interface
 
 Includes a local browser-based interface.
 
 ```bash
-./run.sh web
+./run.sh
 ```
 
 Then open `http://127.0.0.1:50001`.
