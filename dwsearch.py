@@ -50,7 +50,7 @@ from textblob import TextBlob
 notice = '''
 Note: 
     This tool is not to be used for illegal purposes.
-    The author is not responsible for any misuse of Darkdump.
+    The author is not responsible for any misuse of Dwsearch.
     May God bless you all.
     https://joshschiavone.com - https://github.com/josh0xA
 '''
@@ -168,7 +168,7 @@ class ResultSaver:
 
     def _save_txt(self):
         with open(self.filepath, 'w', encoding='utf-8') as f:
-            f.write("Darkdump Scan Report\n")
+            f.write("Dwsearch Scan Report\n")
             f.write("=" * 60 + "\n")
             f.write(f"Query   : {self.query}\n")
             f.write(f"Engine  : {self.engine}\n")
@@ -406,7 +406,7 @@ class AhmiaBlacklist:
             return False
 
 
-class Darkdump(object):
+class Dwsearch(object):
 
 
     @staticmethod
@@ -747,7 +747,7 @@ class Darkdump(object):
         Fetch results from OnionLand via its .onion address (Tor required).
 
         OnionLand indexes Tor, I2P, and clearnet. We filter to .onion results only
-        since Darkdump is a dark web tool. Results use .result-block .title a;
+        since Dwsearch is a dark web tool. Results use .result-block .title a;
         the destination URL is double-encoded as the 'l' query param in the href
         (confirmed by OnionSearch core.py: unquote(unquote(get_parameter(href, 'l')))).
 
@@ -1131,9 +1131,9 @@ class Darkdump(object):
 
         Usage
         -----
-        python3 darkdump.py --breach -q "example.com" -e ahmia
-        python3 darkdump.py --breach -q "admin@corp.com" -e notevil -p --breach-deep
-        python3 darkdump.py --breach -q "john_doe" -e tor66 -o report.json
+        python3 dwsearch.py --breach -q "example.com" -e ahmia
+        python3 dwsearch.py --breach -q "admin@corp.com" -e notevil -p --breach-deep
+        python3 dwsearch.py --breach -q "john_doe" -e tor66 -o report.json
         """
         import time as _time
         import hashlib as _hashlib
@@ -1335,7 +1335,7 @@ class Darkdump(object):
 
         all_results = []
         seen_urls   = set()
-        dd          = Darkdump()
+        dd          = Dwsearch()
 
         for q_idx, query in enumerate(queries, start=1):
             print(f"{Colors.BOLD + Colors.C}[{q_idx}/{len(queries)}]{Colors.END} {query}")
@@ -1501,13 +1501,13 @@ class Darkdump(object):
 
 
 
-def darkdump_main():
+def dwsearch_main():
     clr = Colors()
     bn  = Banner()
 
     Platform(True).clean_screen()
     Platform(True).get_operating_system_descriptor()
-    bn.LoadDarkdumpBanner()
+    bn.LoadDwsearchBanner()
     print(notice)
 
     engine_help = (
@@ -1521,9 +1521,9 @@ def darkdump_main():
     )
 
     parser = argparse.ArgumentParser(
-        description="Darkdump is an interface for scraping the deepweb. Made by yours truly."
+        description="Dwsearch is an interface for scraping the deepweb. Made by yours truly."
     )
-    parser.add_argument("-v", "--version", help="returns darkdump's version", action="store_true")
+    parser.add_argument("-v", "--version", help="returns dwsearch's version", action="store_true")
     parser.add_argument("-q", "--query",   help="the keyword or string you want to search on the deepweb", type=str)
     parser.add_argument("-a", "--amount",  help="the amount of results you want to retrieve", type=int, default=10)
     parser.add_argument("-p", "--proxy",   help="use tor proxy for scraping", action="store_true")
@@ -1541,7 +1541,7 @@ def darkdump_main():
             "paste-site operators, hash types, username permutations, and stealer log terms. "
             "extracts credential artefacts from result snippets and classifies results by "
             "severity (CRITICAL/HIGH/MEDIUM/INFO) and category (paste-site/forum/market/leak-index). "
-            "example: darkdump.py --breach -q admin@example.com -e notevil -p"
+            "example: dwsearch.py --breach -q admin@example.com -e notevil -p"
         ),
         action="store_true",
     )
@@ -1581,7 +1581,7 @@ def darkdump_main():
     args = parser.parse_args()
 
     if args.version:
-        print(Colors.BOLD + Colors.B + f"Darkdump Version: {__version__}\n" + Colors.END)
+        print(Colors.BOLD + Colors.B + f"Dwsearch Version: {__version__}\n" + Colors.END)
 
     if args.proxy and not args.scrape and not args.breach and not args.breach_deep:
         # Proxy is also valid for Tor-only search engines (e.g. notevil/tor66/onionland/excavator).
@@ -1629,7 +1629,7 @@ def darkdump_main():
             if confirm != 'y':
                 print(f"{Colors.BOLD + Colors.R}Aborted.{Colors.END}")
                 sys.exit(0)
-        Darkdump().breach_intel(
+        Dwsearch().breach_intel(
             args.query,
             amount=args.amount,
             engine_key=args.engine,
@@ -1645,7 +1645,7 @@ def darkdump_main():
             f"Showing up to {args.amount} results...\n"
             f"Indexing is viable, skipping dead onions.\n"
         )
-        Darkdump().crawl(
+        Dwsearch().crawl(
             args.query,
             args.amount,
             engine_key=args.engine,
@@ -1662,4 +1662,4 @@ def darkdump_main():
 
 
 if __name__ == "__main__":
-    darkdump_main()
+    dwsearch_main()

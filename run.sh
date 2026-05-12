@@ -13,10 +13,10 @@ Commands:
   web           Run the web UI on http://127.0.0.1:50001
   web --uncensored
                 Same as web, but prints a TorDex+proxy preset URL
-  cli           Run the CLI (passes remaining args to darkdump.py)
+  cli           Run the CLI (passes remaining args to dwsearch.py)
 
 Tor:
-  If 127.0.0.1:9050 is not listening, Tor is started automatically using torrc.darkdump
+  If 127.0.0.1:9050 is not listening, Tor is started automatically using torrc.dwsearch
 EOF
 }
 
@@ -39,15 +39,15 @@ ensure_tor() {
     return 0
   fi
   echo "[+] Starting Tor (SOCKS 9050 / Control 9051) ..."
-  mkdir -p /tmp/tor-darkdump
-  tor -f "$HERE/torrc.darkdump" >/tmp/tor-darkdump.log 2>&1 &
+  mkdir -p /tmp/tor-dwsearch
+  tor -f "$HERE/torrc.dwsearch" >/tmp/tor-dwsearch.log 2>&1 &
   tor_pid="$!"
   started_tor=1
   for _ in $(seq 1 80); do
     if port_open; then return 0; fi
     sleep 0.25
   done
-  echo "[!] Tor did not open 127.0.0.1:9050 in time. Check /tmp/tor-darkdump.log" >&2
+  echo "[!] Tor did not open 127.0.0.1:9050 in time. Check /tmp/tor-dwsearch.log" >&2
   return 1
 }
 
@@ -58,16 +58,16 @@ case "$cmd" in
   web)
     ensure_tor
     if [[ "${1:-}" == "--uncensored" ]]; then
-      echo "[+] Darkdump web (TorDex preset): http://127.0.0.1:50001/?engine=tordex&proxy=1"
+      echo "[+] Dwsearch web (TorDex preset): http://127.0.0.1:50001/?engine=tordex&proxy=1"
       shift || true
     else
-      echo "[+] Darkdump web: http://127.0.0.1:50001"
+      echo "[+] Dwsearch web: http://127.0.0.1:50001"
     fi
-    exec "$HERE/.venv/bin/python" "$HERE/darkdump-web/app.py" "$@"
+    exec "$HERE/.venv/bin/python" "$HERE/dwsearch-web/app.py" "$@"
     ;;
   cli)
     ensure_tor
-    exec "$HERE/.venv/bin/python" "$HERE/darkdump.py" "$@"
+    exec "$HERE/.venv/bin/python" "$HERE/dwsearch.py" "$@"
     ;;
   -h|--help|"")
     usage

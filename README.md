@@ -1,20 +1,20 @@
-# darkwebrc
+# dwsearch
 
 <p align="center">
-  <img alt="darkwebrc" src="imgs/darkdump_example.png" width="860">
+  <img alt="dwsearch" src="imgs/dwsearch_example.png" width="860">
 </p>
 
 <p align="center">
-  <a href="https://github.com/OlehHavrilko/darkwebrc/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/OlehHavrilko/darkwebrc/ci.yml?branch=main"></a>
-  <a href="https://github.com/OlehHavrilko/darkwebrc/releases"><img alt="Release" src="https://img.shields.io/github/v/release/OlehHavrilko/darkwebrc?display_name=tag&sort=semver"></a>
-  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/OlehHavrilko/darkwebrc"></a>
+  <a href="https://github.com/OlehHavrilko/dwsearch/actions"><img alt="CI" src="https://img.shields.io/github/actions/workflow/status/OlehHavrilko/dwsearch/ci.yml?branch=main"></a>
+  <a href="https://github.com/OlehHavrilko/dwsearch/releases"><img alt="Release" src="https://img.shields.io/github/v/release/OlehHavrilko/dwsearch?display_name=tag&sort=semver"></a>
+  <a href="LICENSE"><img alt="License" src="https://img.shields.io/github/license/OlehHavrilko/dwsearch"></a>
   <a href="https://www.python.org/"><img alt="Python" src="https://img.shields.io/badge/python-3.9%2B-blue"></a>
-  <a href="https://github.com/OlehHavrilko/darkwebrc/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/OlehHavrilko/darkwebrc?style=flat"></a>
+  <a href="https://github.com/OlehHavrilko/dwsearch/stargazers"><img alt="Stars" src="https://img.shields.io/github/stars/OlehHavrilko/dwsearch?style=flat"></a>
 </p>
 
 ## About
 
-`darkwebrc` is a practical fork of **Darkdump**: an OSINT tool for deep web investigation.
+`dwsearch` is a practical fork of **Dwsearch**: an OSINT tool for deep web investigation.
 
 It can:
 - Search multiple dark-web engines
@@ -31,12 +31,12 @@ Author / maintainer of this fork: **Oleh Havrilko**.
 ### 1) Clone + deps
 
 ```bash
-git clone https://github.com/OlehHavrilko/darkwebrc.git
-cd darkwebrc
+git clone https://github.com/OlehHavrilko/dwsearch.git
+cd dwsearch
 python3 -m venv .venv
 . .venv/bin/activate
 pip install -r requirements.txt
-pip install -r darkdump-web/requirements.txt
+pip install -r dwsearch-web/requirements.txt
 ```
 
 ### 2) Uncensored web (TorDex + Tor proxy)
@@ -60,7 +60,7 @@ Open:
 ### Option A: Local Tor for this repo (no systemd)
 
 This repo includes a minimal Tor config:
-- `torrc.darkdump` (SOCKS `127.0.0.1:9050`, ControlPort `127.0.0.1:9051`)
+- `torrc.dwsearch` (SOCKS `127.0.0.1:9050`, ControlPort `127.0.0.1:9051`)
 Tor is auto-started by `./run.sh` when needed.
 
 ### Option B: System Tor
@@ -90,7 +90,7 @@ All engines are filtered against Ahmia's abuse blacklist, but *unfiltered engine
 ## CLI Usage
 
 ```
-darkdump-cli [-h] [-v] [-q QUERY] [-a AMOUNT] [-e ENGINE]
+dwsearch-cli [-h] [-v] [-q QUERY] [-a AMOUNT] [-e ENGINE]
              [-p] [-s] [-i] [-d] [-u] [-o FILE]
              [--breach] [--breach-deep] [--breach-delay SECONDS]
              [-y]
@@ -117,25 +117,25 @@ darkdump-cli [-h] [-v] [-q QUERY] [-a AMOUNT] [-e ENGINE]
 
 ```bash
 # Basic search via Ahmia (no Tor required)
-darkdump-cli -q "privacy tools" -a 10
+dwsearch-cli -q "privacy tools" -a 10
 
 # Search and deep scrape each result via Tor
-darkdump-cli -q "hacking" -a 10 -s -p
+dwsearch-cli -q "hacking" -a 10 -s -p
 
 # Search, scrape, and collect images
-darkdump-cli -q "marketplaces" -a 15 -s -p -i
+dwsearch-cli -q "marketplaces" -a 15 -s -p -i
 
 # Use Not Evil engine, deduplicate, save to JSON
-darkdump-cli -q "security research" -a 20 -e notevil -p -u -o results.json
+dwsearch-cli -q "security research" -a 20 -e notevil -p -u -o results.json
 
 # Use OnionLand engine, save to CSV
-darkdump-cli -q "crypto" -a 10 -e onionland -p -o results.csv
+dwsearch-cli -q "crypto" -a 10 -e onionland -p -o results.csv
 
 # Breach intelligence scan for an email address
-darkdump-cli --breach -q admin@example.com -e ahmia -p
+dwsearch-cli --breach -q admin@example.com -e ahmia -p
 
 # Breach scan with deep scraping
-darkdump-cli --breach --breach-deep -q example.com -e ahmia
+dwsearch-cli --breach --breach-deep -q example.com -e ahmia
 ```
 
 ## Web Interface
@@ -165,4 +165,4 @@ This tool is intended for legitimate security research and OSINT investigations 
 
 ## License
 
-MIT License (upstream Darkdump by Josh Schiavone; this repo is a fork with additional glue/scripts).
+MIT License (upstream Dwsearch by Josh Schiavone; this repo is a fork with additional glue/scripts).

@@ -25,7 +25,7 @@ import sys
 sys.dont_write_bytecode = True
 
 class Banner(object):
-    def LoadDarkdumpBanner(self):
+    def LoadDwsearchBanner(self):
         try:
             from termcolor import cprint, colored
             banner = '''

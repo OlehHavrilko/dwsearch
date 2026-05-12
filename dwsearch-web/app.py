@@ -1,7 +1,7 @@
 """
-darkdump_webapp/app.py
-Flask web interface for Darkdump.
-Run:  python darkdump_webapp/app.py   (from the darkdump project root)
+dwsearch_webapp/app.py
+Flask web interface for Dwsearch.
+Run:  python dwsearch_webapp/app.py   (from the dwsearch project root)
 Then open http://127.0.0.1:5000
 """
 
@@ -16,7 +16,7 @@ import threading
 
 from flask import Flask, render_template, request, Response, stream_with_context
 
-def _find_darkdump_root():
+def _find_dwsearch_root():
     candidates = []
     try:
         here = os.path.dirname(os.path.realpath(__file__))
@@ -32,19 +32,19 @@ def _find_darkdump_root():
             break
         cwd = parent
     for d in candidates:
-        if os.path.isfile(os.path.join(d, 'darkdump.py')):
+        if os.path.isfile(os.path.join(d, 'dwsearch.py')):
             return d
     raise ImportError(
-        "Could not find darkdump.py.\n"
-        "Place darkdump_webapp/ inside the darkdump project folder and run:\n"
-        "  python darkdump_webapp/app.py"
+        "Could not find dwsearch.py.\n"
+        "Place dwsearch_webapp/ inside the dwsearch project folder and run:\n"
+        "  python dwsearch_webapp/app.py"
     )
 
-DARKDUMP_DIR = _find_darkdump_root()
+DARKDUMP_DIR = _find_dwsearch_root()
 if DARKDUMP_DIR not in sys.path:
     sys.path.insert(0, DARKDUMP_DIR)
 
-from darkdump import Darkdump, Configuration, AhmiaBlacklist
+from dwsearch import Dwsearch, Configuration, AhmiaBlacklist
 from headers.agents import Headers             
 
 import random
@@ -146,7 +146,7 @@ def search():
                 result_queue.put(('tor_ok', {'ip': tor_ip}))
 
             headers = {'User-Agent': random.choice(Headers.user_agents)}
-            dd = Darkdump()
+            dd = Dwsearch()
 
             results = []
             if engine_key == 'ahmia':
@@ -387,7 +387,7 @@ def breach():
                 'engine':   engine_key,
             }))
 
-            dd        = Darkdump()
+            dd        = Dwsearch()
             headers   = {'User-Agent': random.choice(Headers.user_agents)}
             seen_urls = set()
             total     = 0
@@ -481,7 +481,7 @@ def export():
         return Response(
             payload,
             mimetype='application/json',
-            headers={'Content-Disposition': 'attachment; filename="darkdump_results.json"'}
+            headers={'Content-Disposition': 'attachment; filename="dwsearch_results.json"'}
         )
 
     if fmt == 'csv':
@@ -499,12 +499,12 @@ def export():
         return Response(
             buf.getvalue(),
             mimetype='text/csv',
-            headers={'Content-Disposition': 'attachment; filename="darkdump_results.csv"'}
+            headers={'Content-Disposition': 'attachment; filename="dwsearch_results.csv"'}
         )
 
     # txt (default)
     lines = [
-        'Darkdump Results',
+        'Dwsearch Results',
         '=' * 60,
         f'Query:   {query}',
         f'Engine:  {engine}',
@@ -528,7 +528,7 @@ def export():
     return Response(
         '\n'.join(lines),
         mimetype='text/plain',
-        headers={'Content-Disposition': 'attachment; filename="darkdump_results.txt"'}
+        headers={'Content-Disposition': 'attachment; filename="dwsearch_results.txt"'}
     )
 
 
@@ -539,8 +539,8 @@ if __name__ == '__main__':
     flask.cli.show_server_banner = lambda *_: None
 
     from banner.banner import Banner
-    from darkdump import notice, Colors
-    Banner().LoadDarkdumpBanner()
+    from dwsearch import notice, Colors
+    Banner().LoadDwsearchBanner()
     print(notice)
     print(f"  Web interface running at {Colors.BOLD}{Colors.G}http://127.0.0.1:50001{Colors.END}\n")
     app.run(debug=False, host='127.0.0.1', port=50001, threaded=True)

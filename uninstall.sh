@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# uninstall.sh — removes darkdump launchers installed by install.sh
+# uninstall.sh — removes dwsearch launchers installed by install.sh
 
 set -e
 
@@ -14,10 +14,10 @@ warn()  { echo -e "${BOLD}${YELLOW}[!]${RESET} $*"; }
 error() { echo -e "${BOLD}${RED}[x]${RESET} $*" >&2; }
 
 LAUNCHERS=(
-    "/usr/local/bin/darkdump"
-    "/usr/local/bin/darkdump-cli"
-    "$HOME/.local/bin/darkdump"
-    "$HOME/.local/bin/darkdump-cli"
+    "/usr/local/bin/dwsearch"
+    "/usr/local/bin/dwsearch-cli"
+    "$HOME/.local/bin/dwsearch"
+    "$HOME/.local/bin/dwsearch-cli"
 )
 
 removed=0
@@ -34,7 +34,7 @@ for f in "${LAUNCHERS[@]}"; do
 done
 
 if [ "$removed" -eq 0 ]; then
-    warn "No Darkdump launchers found — nothing to remove."
+    warn "No Dwsearch launchers found — nothing to remove."
 else
     info "Uninstall complete."
 fi
