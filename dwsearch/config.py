@@ -23,6 +23,14 @@ def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any
     return out
 
 
+def resolve_config_path(path: str | None) -> Path | None:
+    if path:
+        p = Path(path).expanduser()
+        return p if p.is_file() else None
+    default = Path("dwsearch.toml")
+    return default if default.is_file() else None
+
+
 @dataclass(frozen=True)
 class RuntimeConfig:
     socks5_url: str = "socks5h://localhost:9050"
@@ -33,19 +41,18 @@ class RuntimeConfig:
     default_amount: int = 10
     concurrency: int = 6
     headers_preset: str = "random"
-    profile: str = "uncensored"
+    profile: str = "default"
     extra: dict[str, Any] = field(default_factory=dict)
 
 
 def load_runtime_config(path: str | None, profile: str | None) -> RuntimeConfig:
     data: dict[str, Any] = {}
-    if path:
-        p = Path(path).expanduser()
-        if p.is_file():
-            data = _load_toml(p)
+    resolved = resolve_config_path(path)
+    if resolved is not None:
+        data = _load_toml(resolved)
 
     profiles = data.get("profiles", {}) if isinstance(data.get("profiles", {}), dict) else {}
-    prof = profile or data.get("profile") or "uncensored"
+    prof = profile or data.get("profile") or "default"
     selected = profiles.get(prof, {}) if isinstance(profiles.get(prof, {}), dict) else {}
 
     merged = _deep_merge(data.get("defaults", {}) if isinstance(data.get("defaults", {}), dict) else {}, selected)
@@ -65,4 +72,3 @@ def load_runtime_config(path: str | None, profile: str | None) -> RuntimeConfig:
             "default_amount", "concurrency", "headers_preset",
         }},
     )
-

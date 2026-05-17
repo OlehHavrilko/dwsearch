@@ -8,7 +8,7 @@ Goal: максимально практичный инструмент для п
 
 ## Phase 0 — Clean Baseline (now)
 
-- Единая точка входа `./run.sh` (web/cli) + автозапуск Tor через `torrc.dwsearch`.
+- Единая точка входа `./run.sh` (web) + автозапуск Tor через `torrc.dwsearch`.
 - Удаление мусора из репо (`__pycache__`, окружения) через `.gitignore`.
 
 Done/keeping stable: чтобы дальнейшие изменения не ломали запуск “из коробки”.
@@ -29,6 +29,8 @@ Deliverables:
 - `dwsearch` как пакет
 - простая установка/запуск без привязки к текущей папке
 
+Status: completed — packaged web entrypoint (`dwsearch`), moduleized `dwsearch_web`, and simplified one-command launch.
+
 ---
 
 ## Phase 2 — Config + Profiles (2–3 days)
@@ -40,7 +42,6 @@ Deliverables:
   - user-agent, headers presets
   - лимиты по результатам, дедуп, формат экспорта
 - Профили:
-  - `uncensored` (по умолчанию)
   - `fast` (меньше проверок/скрапа)
   - `deep` (скрап + изображения + расширенный парсинг)
 - CLI флаги всегда имеют приоритет над конфигом.
@@ -48,6 +49,8 @@ Deliverables:
 Deliverables:
 - `dwsearch --config ... --profile ...`
 - предсказуемые дефолты
+
+Status: in progress — config/profile loading is wired, and timeout/retries/backoff now drive runtime HTTP behavior.
 
 ---
 
@@ -162,7 +165,7 @@ Deliverables:
 
 - Docker образ (опционально) с Tor внутри и пробросом портов.
 - “One-liner” installer (обновить `install.sh`) под `dwsearch`:
-  - ставит `dwsearch` и `dwsearch-web`
+  - ставит `dwsearch`
 - Документация под WSL2/Ubuntu/Termux proot (реальные команды).
 
 Deliverables:

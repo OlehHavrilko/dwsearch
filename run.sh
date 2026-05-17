@@ -6,15 +6,13 @@ HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 usage() {
   cat <<'EOF'
 Usage:
-  ./run.sh web [--uncensored]
-  ./run.sh cli [args...]
+  ./run.sh
+  ./run.sh web
   ./run.sh tor-log
 
 Commands:
+  (default)     Run the web UI on http://127.0.0.1:50001
   web           Run the web UI on http://127.0.0.1:50001
-  web --uncensored
-                Same as web, but prints a TorDex+proxy preset URL
-  cli           Run the CLI (passes remaining args to dwsearch)
   tor-log       Tail Tor log (/tmp/tor-dwsearch.log)
 
 Tor:
@@ -53,23 +51,14 @@ ensure_tor() {
   return 1
 }
 
-cmd="${1:-}"
+cmd="${1:-web}"
 shift || true
 
 case "$cmd" in
   web)
     ensure_tor
-    if [[ "${1:-}" == "--uncensored" ]]; then
-      echo "[+] Dwsearch web (TorDex preset): http://127.0.0.1:50001/?engine=tordex&proxy=1"
-      shift || true
-    else
-      echo "[+] Dwsearch web: http://127.0.0.1:50001"
-    fi
-    exec "$HERE/.venv/bin/python" "$HERE/dwsearch-web/app.py" "$@"
-    ;;
-  cli)
-    ensure_tor
-    exec "$HERE/.venv/bin/python" -m dwsearch "$@"
+    echo "[+] Dwsearch web: http://127.0.0.1:50001"
+    exec "$HERE/.venv/bin/python" -m dwsearch_web "$@"
     ;;
   tor-log)
     tail -f /tmp/tor-dwsearch.log
